@@ -28,6 +28,8 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+static struct list sleep_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -55,14 +57,16 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 bool thread_mlfqs;
 
 static void kernel_thread (thread_func *, void *aux);
-
+void thread_sleep(int64_t tick);
 static void idle (void *aux UNUSED);
 static struct thread *next_thread_to_run (void);
 static void init_thread (struct thread *, const char *name, int priority);
 static void do_schedule(int status);
 static void schedule (void);
 static tid_t allocate_tid (void);
-
+bool less_func(const struct list_elem *a,
+               const struct list_elem *b,
+               void *aux);
 /* Returns true if T appears to point to a valid thread. */
 #define is_thread(t) ((t) != NULL && (t)->magic == THREAD_MAGIC)
 
@@ -92,6 +96,42 @@ static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
 
    It is not safe to call thread_current() until this function
    finishes. */
+
+bool less_func(const struct list_elem *a,
+               const struct list_elem *b,
+               void *aux UNUSED) {
+    struct thread *process_a = list_entry(a, struct thread, elem);
+    struct thread *process_b = list_entry(b, struct thread, elem);
+
+    // Compare the values of process_a and process_b.
+    // If process_a is less than process_b, return true.
+    // Otherwise, return false.
+    return (process_a->wakeup_ticks < process_b->wakeup_ticks);
+}
+
+void thread_wakeup(int64_t curr_ticks)
+{
+	struct list_elem *curr_elem = list_begin(&sleep_list);
+	enum intr_level old_level;
+	old_level = intr_disable ();
+	while(curr_elem != list_end(&sleep_list))
+	{
+		struct thread *curr_thread = list_entry(curr_elem, struct thread, elem);
+		int64_t wakeup_ticks = curr_thread->wakeup_ticks;
+		if (curr_ticks >= wakeup_ticks){
+			list_remove(curr_elem);
+			thread_unblock(curr_thread);
+			break;
+		}
+
+		else{
+				curr_elem = list_next(curr_elem);
+				 
+			}
+	}
+	intr_set_level (old_level);
+}
+
 void
 thread_init (void) {
 	ASSERT (intr_get_level () == INTR_OFF);
@@ -108,6 +148,7 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&sleep_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -176,6 +217,8 @@ thread_print_stats (void) {
    The code provided sets the new thread's `priority' member to
    PRIORITY, but no actual priority scheduling is implemented.
    Priority scheduling is the goal of Problem 1-3. */
+
+
 tid_t
 thread_create (const char *name, int priority,
 		thread_func *function, void *aux) {
@@ -210,6 +253,18 @@ thread_create (const char *name, int priority,
 	return tid;
 }
 
+
+void thread_sleep(int64_t tick)
+{
+	struct thread *curr = thread_current();
+	enum intr_level old_level;
+	curr->wakeup_ticks = tick;
+	old_level = intr_disable ();
+
+	list_insert_ordered(&sleep_list,&curr->elem, less_func, NULL);
+	thread_block();
+	intr_set_level(old_level);
+}
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
 
@@ -235,9 +290,7 @@ thread_block (void) {
 void
 thread_unblock (struct thread *t) {
 	enum intr_level old_level;
-
 	ASSERT (is_thread (t));
-
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
 	list_push_back (&ready_list, &t->elem);
