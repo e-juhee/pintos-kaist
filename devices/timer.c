@@ -94,10 +94,11 @@ timer_elapsed (int64_t then) {
 void
 timer_sleep (int64_t ticks) {
 	int64_t start = timer_ticks (); // 현재 시각
+	ASSERT(intr_get_level() == INTR_ON);
 
-	//if (timer_elapsed (start) < ticks) { // start로부터 경과된 시간이 ticks보다 작은 지 확인(ticks: 자야 하는 시간)
+	// if (timer_elapsed (start) < ticks) { // start로부터 경과된 시간이 ticks보다 작은 지 확인(ticks: 자야 하는 시간)
 		thread_sleep(start + ticks); // 깨어야 할 시각
-	//}
+	// }
 }
 
 /* Suspends execution for approximately MS milliseconds. */
