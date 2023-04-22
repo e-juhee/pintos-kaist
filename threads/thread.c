@@ -27,6 +27,8 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+static struct list sleep_list;
+
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -108,6 +110,8 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&sleep_list); // sleep_list 초기화
+	list_init (&destruction_req);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -296,17 +300,74 @@ thread_exit (void) {
    may be scheduled again immediately at the scheduler's whim. */
 void
 thread_yield (void) {
-	struct thread *curr = thread_current ();
+	struct thread *curr = thread_current (); // 현재 스레드
 	enum intr_level old_level;
 
 	ASSERT (!intr_context ());
 
-	old_level = intr_disable ();
+	old_level = intr_disable (); // 인터럽트 비활성
 	if (curr != idle_thread)
-		list_push_back (&ready_list, &curr->elem);
-	do_schedule (THREAD_READY);
-	intr_set_level (old_level);
+		list_push_back (&ready_list, &curr->elem); // ready_list의 마지막에 배치
+	do_schedule (THREAD_READY); // 현재 실행 중인 스레드의 상태를 준비 상태로 변경, 컨텍스트 전환
+	intr_set_level (old_level); // 인터럽트 상태를 원래 상태로 변경
 }
+
+
+void
+thread_sleep (int64_t ticks) { // ticks: 깨어야 할 시각
+	struct thread *curr = thread_current (); // 현재 스레드
+	
+	// struct sleep_thread_elem *curr_sleep;
+	struct sleep_thread_elem *curr_sleep = (struct sleep_thread_elem *)malloc(sizeof(struct sleep_thread_elem));
+
+
+	enum intr_level old_level;
+
+	if (curr != idle_thread) { // 현재 스레드가 idle이 아니라면
+		curr_sleep->wakeup_ticks = ticks; // 일어날 시각
+		curr_sleep->thread = curr;
+
+		old_level = intr_disable (); // 인터럽트 비활성
+
+		thread_block(); // 현재 스레드 재우고 ready_list의 스레드 실행
+		
+		// list_push_back (&sleep_list, &curr_sleep->elem); 
+		list_insert_ordered(&sleep_list, &curr_sleep->elem, less_ticks, NULL); // sleep_list에 curr_sleep을 추가한다.
+		
+		intr_set_level (old_level); // 인터럽트 상태를 원래 상태로 변경
+	}
+}
+
+
+void
+thread_wakeup (int64_t global_ticks) {
+	enum intr_level old_level;
+	old_level = intr_disable (); // 인터럽트 비활성
+
+	// 깨울 스레드 찾기
+	struct sleep_thread_elem *root_thread = list_entry(list_head(&sleep_list), struct sleep_thread_elem, elem);
+	while (root_thread->wakeup_ticks <= global_ticks) {
+
+		thread_unblock(root_thread); // ready_list에 추가
+		
+		// sleep_list에서 제거
+		struct sleep_thread_elem *s = list_entry(list_pop_front(&sleep_list), struct sleep_thread_elem, elem);
+		free(s);
+		
+		if (root_thread != list_end(&sleep_list))
+			root_thread = list_head(root_thread); // 다음으로 이동
+	}
+
+	intr_set_level (old_level); // 인터럽트 상태를 원래 상태로 변경
+}
+
+
+bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+    struct sleep_thread_elem *st_a = list_entry(a, struct sleep_thread_elem, elem);
+    struct sleep_thread_elem *st_b = list_entry(b, struct sleep_thread_elem, elem);
+    return st_a->wakeup_ticks < st_b->wakeup_ticks;
+}
+
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void

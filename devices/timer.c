@@ -71,6 +71,7 @@ timer_calibrate (void) {
 }
 
 /* Returns the number of timer ticks since the OS booted. */
+// 운영 체제(OS)가 부팅된 이후부터 현재까지 경과한 시간을 타이머 틱(tick) 단위로 반환
 int64_t
 timer_ticks (void) {
 	enum intr_level old_level = intr_disable ();
@@ -82,19 +83,21 @@ timer_ticks (void) {
 
 /* Returns the number of timer ticks elapsed since THEN, which
    should be a value once returned by timer_ticks(). */
+// 인자인 then 이후로 경과한 타이머 틱(tick) 수를 반환
 int64_t
 timer_elapsed (int64_t then) {
 	return timer_ticks () - then;
 }
 
 /* Suspends execution for approximately TICKS timer ticks. */
+// 타이머 틱(tick) 동안 실행을 일시 중지
 void
 timer_sleep (int64_t ticks) {
-	int64_t start = timer_ticks ();
+	int64_t start = timer_ticks (); // 현재 시각
 
-	ASSERT (intr_get_level () == INTR_ON);
-	while (timer_elapsed (start) < ticks)
-		thread_yield ();
+	//if (timer_elapsed (start) < ticks) { // start로부터 경과된 시간이 ticks보다 작은 지 확인(ticks: 자야 하는 시간)
+		thread_sleep(start + ticks); // 깨어야 할 시각
+	//}
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -126,6 +129,7 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
+	thread_wakeup(ticks);
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

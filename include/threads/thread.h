@@ -109,6 +109,12 @@ struct thread {
 	unsigned magic;                     /* Detects stack overflow. */
 };
 
+// struct sleep_thread_elem {
+//   struct thread *thread;  // 잠든 스레드
+//   int64_t wakeup_ticks;   // 깨어날 tick
+//   struct list_elem elem;  // 리스트에서의 위치
+// };
+
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
@@ -132,6 +138,10 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
+void thread_sleep (int64_t ticks);
+void thread_wakeup (int64_t global_ticks);
+bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux);
+
 
 int thread_get_priority (void);
 void thread_set_priority (int);
