@@ -28,6 +28,8 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+static struct list sleep_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -92,6 +94,49 @@ static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
 
    It is not safe to call thread_current() until this function
    finishes. */
+
+bool thread_wakeup_less(const struct list_elem *a, const struct list_elem *b, void *aux) {
+    const struct thread *thread_a = list_entry(a, struct thread, elem);
+    const struct thread *thread_b = list_entry(b, struct thread, elem);
+    return thread_a->wakeup_ticks < thread_b->wakeup_ticks;
+}
+
+/* 스레드 재우기 */
+void thread_sleep(int64_t target_ticks) {
+	struct thread *cur = thread_current();;
+  enum intr_level old_level;
+
+  old_level = intr_disable ();
+  if (cur != idle_thread) {
+
+    cur->wakeup_ticks = target_ticks;
+    list_insert_ordered(&sleep_list, &cur->elem, thread_wakeup_less, NULL);
+    thread_block();
+		intr_set_level(old_level);
+  }
+}
+
+/* 스레드 깨우기 */
+void thread_wakeup(int64_t ticks){
+  enum intr_level old_level;
+	struct list_elem *e = list_begin(&sleep_list);
+  // ASSERT (!intr_context ());
+  old_level = intr_disable(); // 인터럽트 비활성화
+
+  while(e != list_end(&sleep_list))
+  {
+    // e가 가리키는 list_elem의 시작 주소로부터 struct sleep_list 구조체의 주소를 계산
+    struct thread *t = list_entry(e, struct thread, elem);
+    if(ticks < t->wakeup_ticks)
+    {
+			break;
+    }
+		e = list_remove(e); // slee_list에서 해당 스레드 꺼낸다.
+		thread_unblock(t); // 꺼내고 unblock처리해서 ready_list에 넣고, 스레드를 준비 상태로 만든다.
+  }
+  intr_set_level(old_level); // 이전에 저장한 인터럽트 활성화
+}
+
 void
 thread_init (void) {
 	ASSERT (intr_get_level () == INTR_OFF);
@@ -108,6 +153,7 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&sleep_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */

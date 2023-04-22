@@ -92,6 +92,7 @@ struct thread {
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
 
+	int64_t wakeup_ticks;
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
 
@@ -109,6 +110,8 @@ struct thread {
 	unsigned magic;                     /* Detects stack overflow. */
 };
 
+bool thread_wakeup_less(const struct list_elem *a, const struct list_elem *b, void *aux);
+
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
@@ -119,6 +122,9 @@ void thread_start (void);
 
 void thread_tick (void);
 void thread_print_stats (void);
+
+void thread_sleep(int64_t target_ticks);
+void thread_wakeup(int64_t ticks);
 
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
