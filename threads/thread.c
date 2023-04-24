@@ -321,55 +321,34 @@ void thread_sleep(int64_t ticks)
 	ASSERT(curr != idle_thread); // 현재 스레드가 idle이 아닐 때만
 	curr->wakeup_ticks = ticks;	 // 일어날 시각 저장
 
-	// list_insert_ordered(&sleep_list, &curr->elem, less_ticks, NULL); // sleep_list에 curr_sleep을 추가
-	list_push_back(&sleep_list, &curr->elem);
-	thread_block(); // 현재 스레드 재우고 ready_list의 스레드 실행
+	list_insert_ordered(&sleep_list, &curr->elem, cmp_thread_ticks, NULL); // sleep_list에 추가
+	thread_block();														   // 현재 스레드 재우고 ready_list의 스레드 실행
 
 	intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
 }
 
 void thread_wakeup(int64_t global_ticks)
 {
-	struct list_elem *curr_elem = list_begin(&sleep_list); // sleep_list의 첫번째 요소 가져옴(빈 경우 NULL 반환)
-
 	enum intr_level old_level;
 	old_level = intr_disable(); // 인터럽트 비활성
-	while (curr_elem != list_end(&sleep_list))
-	{ // list의 끝까지 반복
-		// 현재 검사중인 요소(curr_elem)에 연결된 스레드
-		struct thread *curr_thread = list_entry(curr_elem, struct thread, elem);
 
-		if (global_ticks >= curr_thread->wakeup_ticks)
-		{ // 깰 시간이 됐으면
-			// curr_elem = list_remove(&curr_thread->elem); // sleep_list에서 제거
-			curr_elem = list_remove(curr_elem); // sleep_list에서 제거
+	struct list_elem *curr_elem = list_begin(&sleep_list); // sleep_list의 첫번째 요소(빈 경우 NULL)
+	while (curr_elem != list_end(&sleep_list))
+	{
+		struct thread *curr_thread = list_entry(curr_elem, struct thread, elem); // 현재 검사중인 elem의 스레드
+
+		if (global_ticks >= curr_thread->wakeup_ticks) // 깰 시간이 됐으면
+		{
+			curr_elem = list_remove(curr_elem); // sleep_list에서 제거 & curr_elem에는 다음 elem이 담김
 			thread_unblock(curr_thread);		// ready_list로 이동
-												// break;
 		}
 		else
-		{
-			curr_elem = list_next(curr_elem);
-		}
-		// }
-		intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
+			break;
 	}
-
-	// // 깨울 스레드 찾기
-	// struct thread *root_thread = list_entry(list_front(&sleep_list), struct thread, elem);
-	// while (root_thread->wakeup_ticks <= global_ticks) {
-
-	// 	thread_unblock(root_thread); // ready_list에 추가
-
-	// 	// sleep_list에서 제거
-	// 	struct thread *s = list_entry(list_pop_front(&sleep_list), struct thread, elem);
-	// 	free(s);
-
-	// 	if (root_thread != list_end(&sleep_list))
-	// 		root_thread = list_head(root_thread); // 다음으로 이동
-	// }
+	intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
 }
 
-bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
+bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
 {
 	struct thread *st_a = list_entry(a, struct thread, elem);
 	struct thread *st_b = list_entry(b, struct thread, elem);
