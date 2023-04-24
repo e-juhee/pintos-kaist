@@ -109,7 +109,6 @@ void thread_init(void)
 	list_init(&ready_list);
 	list_init(&sleep_list); // sleep_list 초기화
 	list_init(&destruction_req);
-	list_init(&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
