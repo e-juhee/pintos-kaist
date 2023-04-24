@@ -21,7 +21,11 @@ Executing 'priority-sema':
 (priority-sema) end
 Execution of 'priority-sema' complete.
 Timer: 27 ticks
+<<<<<<< HEAD
 Thread: 0 idle ticks, 27 kernel ticks, 0 user ticks
+=======
+Thread: 0 idle ticks, 28 kernel ticks, 0 user ticks
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 Console: 792 characters output
 Keyboard: 0 keys pressed
 Powering off...

@@ -1,6 +1,4 @@
 qemu-system-x86_64: warning: TCG doesn't support requested feature: CPUID.01H:ECX.vmx [bit 5]
-<<<<<<< HEAD
-qemu-system-x86_64: terminating on signal 2
 Traceback (most recent call last):
   File "/home/ubuntu/pintos-kaist/utils/pintos", line 225, in <module>
     guestfns=[f[0].split(':') for f in args.GUESTFNS]).run()
@@ -15,5 +13,3 @@ Traceback (most recent call last):
   File "/usr/lib/python3.6/subprocess.py", line 1471, in wait
     time.sleep(delay)
 KeyboardInterrupt
-=======
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3

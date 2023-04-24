@@ -1,8 +1,6 @@
 {
     "files.associations": {
-        "*.html": "html",
-        "timer.h": "c",
-        "thread.h": "c"
-    },
-    "C_Cpp.errorSquiggles": "disabled"
+        "*.c": "c",
+        "list.h": "c"
+    }
 }
