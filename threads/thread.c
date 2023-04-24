@@ -363,7 +363,12 @@ bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-	thread_current()->priority = new_priority;
+	thread_current()->init_priority = new_priority;
+
+	// if (list_empty(&(thread_current()->donations)) || thread_current()->priority < new_priority)
+	// 	thread_current()->priority = new_priority;
+
+	update_priority_before_donations();
 	preempt_priority();
 }
 
@@ -489,6 +494,10 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->tf.rsp = (uint64_t)t + PGSIZE - sizeof(void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+
+	t->init_priority = priority;
+	t->wait_on_lock = NULL;
+	list_init(&(t->donations));
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
