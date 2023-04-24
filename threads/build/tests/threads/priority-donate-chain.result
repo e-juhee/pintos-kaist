@@ -1,0 +1,8 @@
+FAIL
+Kernel panic in run: PANIC at ../../threads/synch.c:187 in lock_acquire(): assertion `lock != NULL' failed.
+Call stack: 0x8004213329 0x8004209c8d 0x800421969e 0x8004207343
+Translation of call stack:
+0x0000008004213329: debug_panic (lib/kernel/debug.c:32)
+0x0000008004209c8d: lock_acquire (threads/synch.c:188)
+0x000000800421969e: donor_thread_func (tests/threads/priority-donate-chain.c:94)
+0x0000008004207343: kernel_thread (threads/thread.c:447)
