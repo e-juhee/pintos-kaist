@@ -15,6 +15,11 @@
 #include "userprog/process.h"
 #endif
 
+struct semaphore_elem
+{
+	struct list_elem elem;		/* List element. */
+	struct semaphore semaphore; /* This semaphore. */
+};
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -54,7 +59,7 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
-
+void preempt_priority(void);
 static void kernel_thread(thread_func *, void *aux);
 
 static void idle(void *aux UNUSED);
@@ -206,6 +211,8 @@ tid_t thread_create(const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock(t);
+	preempt_priority();
+	
 
 	return tid;
 }
@@ -216,6 +223,17 @@ tid_t thread_create(const char *name, int priority,
    This function must be called with interrupts turned off.  It
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
+
+
+void preempt_priority(void)
+{
+	struct thread *curr = thread_current();
+	if (!list_empty (&ready_list) && 
+    curr->priority < 
+    list_entry (list_front (&ready_list), struct thread, elem)->priority) {
+        thread_yield();
+	}
+}
 void thread_block(void)
 {
 	ASSERT(!intr_context());
@@ -240,9 +258,10 @@ void thread_unblock(struct thread *t)
 
 	old_level = intr_disable();
 	ASSERT(t->status == THREAD_BLOCKED);
-	list_push_back(&ready_list, &t->elem);
+	list_insert_ordered(&ready_list, &t->elem, cmp_thread_priority, NULL);
 	t->status = THREAD_READY;
 	intr_set_level(old_level);
+	
 }
 
 /* Returns the name of the running thread. */
@@ -305,7 +324,7 @@ void thread_yield(void)
 
 	old_level = intr_disable(); // 인터럽트 비활성
 	if (curr != idle_thread)
-		list_push_back(&ready_list, &curr->elem); // ready_list의 마지막에 배치
+		list_insert_ordered(&ready_list, &curr->elem, cmp_thread_priority, NULL); // ready_list의 마지막에 배치
 	do_schedule(THREAD_READY);					  // 현재 실행 중인 스레드의 상태를 준비 상태로 변경, 컨텍스트 전환
 	intr_set_level(old_level);					  // 인터럽트 상태를 원래 상태로 변경
 }
@@ -355,10 +374,23 @@ bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void
 	return st_a->wakeup_ticks < st_b->wakeup_ticks;
 }
 
+bool cmp_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
+{
+	struct thread *st_a = list_entry(a, struct thread, elem);
+	struct thread *st_b = list_entry(b, struct thread, elem);
+	return st_a->priority > st_b->priority;
+}
+
+
+
+
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-	thread_current()->priority = new_priority;
+	thread_current()->init_priority = new_priority;
+	update_priority_by_donations();
+	preempt_priority();
 }
 
 /* Returns the current thread's priority. */
@@ -462,6 +494,9 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->tf.rsp = (uint64_t)t + PGSIZE - sizeof(void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+	t->init_priority = priority;
+	t->wait_on_lock = NULL;
+	list_init(&t->donations);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
