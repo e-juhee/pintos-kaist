@@ -109,7 +109,8 @@ main (void) {
 #ifdef FILESYS
 	/* Initialize file system. */
 	disk_init ();
-	filesys_init (format_filesys);
+	filesys_init (format_fil
+	esys);
 #endif
 
 #ifdef VM

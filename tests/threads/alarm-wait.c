@@ -36,7 +36,7 @@ struct sleep_test
   };
 
 /* Information about an individual thread in the test. */
-struct sleep_thread 
+struct sleep_thread
   {
     struct sleep_test *test;     /* Info shared between all threads. */
     int id;                     /* Sleeper ID. */

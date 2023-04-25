@@ -4,7 +4,15 @@ Kernel command line: -q run priority-donate-chain
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+<<<<<<< HEAD
 Calibrating timer...  107,929,600 loops/s.
+=======
+<<<<<<< HEAD
+Calibrating timer...  111,206,400 loops/s.
+=======
+Calibrating timer...  157,081,600 loops/s.
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
+>>>>>>> eb6f497530d66459eb1c5252fb1d297851bc51d5
 Boot complete.
 Executing 'priority-donate-chain':
 (priority-donate-chain) begin
@@ -47,8 +55,35 @@ Executing 'priority-donate-chain':
 (priority-donate-chain) main finishing with priority 0.
 (priority-donate-chain) end
 Execution of 'priority-donate-chain' complete.
+<<<<<<< HEAD
 Timer: 44 ticks
 Thread: 0 idle ticks, 44 kernel ticks, 0 user ticks
 Console: 2676 characters output
 Keyboard: 0 keys pressed
 Powering off...
+=======
+<<<<<<< HEAD
+Timer: 31 ticks
+Thread: 0 idle ticks, 31 kernel ticks, 0 user ticksKernel PANIC at ../../threads/synch.c:187 in lock_acquire(): assertion `lock != NULL' failed.
+Call stack: 0x8004213329 0x8004209c8d 0x800421969e 0x8004207343.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 32 ticks
+Thread: 0 idle ticks, 32 kernel ticks, 0 user ticks
+=======
+Timer: 26 ticks
+Thread: 0 idle ticks, 26 kernel ticks, 0 user ticks
+Console: 1079 characters output
+Keyboard: 0 keys pressed
+Powering off...
+Kernel PANIC at ../../lib/kernel/list.c:159 in list_insert(): assertion `is_interior (before) || is_tail (before)' failed.
+Call stack: 0x80042133cf 0x8004213918 0x8004213bc0 0x800420994e 0x8004209daf 0x800421972e 0x80042073a3.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 28 ticks
+Thread: 0 idle ticks, 28 kernel ticks, 0 user ticks
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
+Console: 1
+>>>>>>> eb6f497530d66459eb1c5252fb1d297851bc51d5

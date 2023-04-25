@@ -4,7 +4,15 @@ Kernel command line: -q run priority-donate-multiple2
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+<<<<<<< HEAD
 Calibrating timer...  111,206,400 loops/s.
+=======
+<<<<<<< HEAD
+Calibrating timer...  106,291,200 loops/s.
+=======
+Calibrating timer...  157,081,600 loops/s.
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
+>>>>>>> eb6f497530d66459eb1c5252fb1d297851bc51d5
 Boot complete.
 Executing 'priority-donate-multiple2':
 (priority-donate-multiple2) begin
@@ -20,8 +28,37 @@ Executing 'priority-donate-multiple2':
 (priority-donate-multiple2) Main thread should have priority 31.  Actual priority: 31.
 (priority-donate-multiple2) end
 Execution of 'priority-donate-multiple2' complete.
+<<<<<<< HEAD
 Timer: 32 ticks
 Thread: 0 idle ticks, 32 kernel ticks, 0 user ticks
 Console: 1165 characters output
+=======
+<<<<<<< HEAD
+Timer: 30 ticks
+Thread: 0 idle ticks, 31 kernel ticks, 0 user ticks
+Console: 916 characters output
+Keyboard: 0 keys pressed
+Powering Interrupt 0x0d (#GP General Protection Exception) at rip=8004208d20
+ cr2=0000000000000000 error=            6000
+rax 0000000000000000 rbx 0000000000204400 rcx 0000000000000020 rdx 00000000000003f9
+rsp 0000008004000ed8 rbp 0000008004000f30 rsi 0000000000000003 rdi 0000000000000001
+rip 0000008004208d20 r8 0000008004000ec8  r9 0000008004216611 r10 0000000000000000
+r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
+r15 0000000000000000 rflags 00200006
+es: 0010 ds: 0010 cs: 0008 ss: 0010
+Kernel PANIC at ../../threads/interrupt.c:361 in intr_handler(): Unexpected interrupt
+Call stack: 0x8004213329 0x8004208920 0x8004208cd2 0x8004207a34 0x800420df96 0x80042166dd 0x8004216548 0x80042067f3 0x800420613d.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 32 ticks
+Thread: 0 idle ticks, 32 kernel ticks, 0 user ticks
+Console: 1
+=======
+Timer: 25 ticks
+Thread: 0 idle ticks, 26 kernel ticks, 0 user ticks
+Console: 916 characters output
+>>>>>>> eb6f497530d66459eb1c5252fb1d297851bc51d5
 Keyboard: 0 keys pressed
 Powering off...
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3

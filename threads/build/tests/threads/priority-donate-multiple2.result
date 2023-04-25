@@ -1,1 +1,51 @@
+<<<<<<< HEAD
 PASS
+=======
+FAIL
+<<<<<<< HEAD
+Kernel panic in run: PANIC at ../../threads/interrupt.c:361 in intr_handler(): Unexpected interrupt
+Call stack: 0x8004213329 0x8004208920 0x8004208cd2 0x8004207a34 0x800420df96 0x80042166dd 0x8004216548 0x80042067f3 0x800420613d
+Translation of call stack:
+0x0000008004213329: debug_panic (lib/kernel/debug.c:32)
+0x0000008004208920: intr_handler (threads/interrupt.c:365)
+0x0000008004208cd2: intr_entry (threads/intr-stubs.o:?)
+0x0000008004207a34: intr_set_level (threads/interrupt.c:131 (discriminator 1))
+0x000000800420df96: serial_putc (devices/serial.c:123)
+0x00000080042166dd: putchar_have_lock (lib/kernel/console.c:176)
+0x0000008004216548: puts (lib/kernel/console.c:133)
+0x00000080042067f3: power_off (threads/init.c:349)
+0x000000800420613d: main (threads/init.c:128)
+=======
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (priority-donate-multiple2) begin
+  (priority-donate-multiple2) Main thread should have priority 34.  Actual priority: 34.
+  (priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 36.
+  (priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 36.
+  (priority-donate-multiple2) Thread b acquired lock b.
+  (priority-donate-multiple2) Thread b finished.
+  (priority-donate-multiple2) Thread a acquired lock a.
+  (priority-donate-multiple2) Thread a finished.
+  (priority-donate-multiple2) Thread c finished.
+  (priority-donate-multiple2) Threads b, a, c should have just finished, in that order.
+  (priority-donate-multiple2) Main thread should have priority 31.  Actual priority: 31.
+  (priority-donate-multiple2) end
+Differences in `diff -u' format:
+  (priority-donate-multiple2) begin
+- (priority-donate-multiple2) Main thread should have priority 34.  Actual priority: 34.
+- (priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 36.
+- (priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 36.
+- (priority-donate-multiple2) Thread b acquired lock b.
+- (priority-donate-multiple2) Thread b finished.
+- (priority-donate-multiple2) Thread a acquired lock a.
+- (priority-donate-multiple2) Thread a finished.
+- (priority-donate-multiple2) Thread c finished.
++ (priority-donate-multiple2) Main thread should have priority 34.  Actual priority: 31.
++ (priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 31.
++ (priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 31.
+  (priority-donate-multiple2) Threads b, a, c should have just finished, in that order.
+  (priority-donate-multiple2) Main thread should have priority 31.  Actual priority: 31.
+  (priority-donate-multiple2) end
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
+>>>>>>> eb6f497530d66459eb1c5252fb1d297851bc51d5

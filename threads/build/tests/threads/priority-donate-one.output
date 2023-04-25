@@ -4,7 +4,15 @@ Kernel command line: -q run priority-donate-one
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+<<<<<<< HEAD
 Calibrating timer...  120,627,200 loops/s.
+=======
+<<<<<<< HEAD
+Calibrating timer...  143,974,400 loops/s.
+=======
+Calibrating timer...  157,081,600 loops/s.
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
+>>>>>>> eb6f497530d66459eb1c5252fb1d297851bc51d5
 Boot complete.
 Executing 'priority-donate-one':
 (priority-donate-one) begin
@@ -18,8 +26,19 @@ Executing 'priority-donate-one':
 (priority-donate-one) This should be the last line before finishing this test.
 (priority-donate-one) end
 Execution of 'priority-donate-one' complete.
+<<<<<<< HEAD
 Timer: 33 ticks
 Thread: 0 idle ticks, 33 kernel ticks, 0 user ticks
 Console: 941 characters output
+=======
+<<<<<<< HEAD
+Timer: 27 ticks
+Thread: 0 idle ticks, 27 kernel ticks, 0 user ticks
+=======
+Timer: 25 ticks
+Thread: 0 idle ticks, 25 kernel ticks, 0 user ticks
+>>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
+Console: 777 characters output
+>>>>>>> eb6f497530d66459eb1c5252fb1d297851bc51d5
 Keyboard: 0 keys pressed
 Powering off...
