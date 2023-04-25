@@ -71,7 +71,6 @@ static void do_schedule(int status);
 static void schedule(void);
 static tid_t allocate_tid(void);
 
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 /* Returns true if T appears to point to a valid thread. */
 #define is_thread(t) ((t) != NULL && (t)->magic == THREAD_MAGIC)
 
@@ -100,7 +99,7 @@ static uint64_t gdt[3] = {0, 0x00af9a000000ffff, 0x00cf92000000ffff};
 
    It is not safe to call thread_current() until this function
    finishes. */
-<<<<<<< HEAD
+
 
 bool less_func(const struct list_elem *a,
                const struct list_elem *b,
@@ -137,14 +136,10 @@ void thread_wakeup(int64_t curr_ticks)
 	intr_set_level (old_level);
 }
 
-void
-thread_init (void) {
-	ASSERT (intr_get_level () == INTR_OFF);
-=======
+
 void thread_init(void)
 {
 	ASSERT(intr_get_level() == INTR_OFF);
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 
 	/* Reload the temporal gdt for the kernel
 	 * This gdt does not include the user context.
@@ -155,17 +150,10 @@ void thread_init(void)
 	lgdt(&gdt_ds);
 
 	/* Init the globla thread context */
-<<<<<<< HEAD
-	lock_init (&tid_lock);
-	list_init (&ready_list);
-	list_init (&sleep_list);
-	list_init (&destruction_req);
-=======
 	lock_init(&tid_lock);
 	list_init(&ready_list);
 	list_init(&sleep_list); // sleep_list 초기화
 	list_init(&destruction_req);
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -233,17 +221,11 @@ void thread_print_stats(void)
    The code provided sets the new thread's `priority' member to
    PRIORITY, but no actual priority scheduling is implemented.
    Priority scheduling is the goal of Problem 1-3. */
-<<<<<<< HEAD
 
 
 tid_t
 thread_create (const char *name, int priority,
 		thread_func *function, void *aux) {
-=======
-tid_t thread_create(const char *name, int priority,
-					thread_func *function, void *aux)
-{
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 	struct thread *t;
 	tid_t tid;
 
@@ -325,12 +307,7 @@ void thread_block(void)
 void thread_unblock(struct thread *t)
 {
 	enum intr_level old_level;
-<<<<<<< HEAD
-	ASSERT (is_thread (t));
-	old_level = intr_disable ();
-	ASSERT (t->status == THREAD_BLOCKED);
-	list_push_back (&ready_list, &t->elem);
-=======
+
 
 	ASSERT(is_thread(t));
 
