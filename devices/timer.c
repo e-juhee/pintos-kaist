@@ -93,21 +93,12 @@ timer_elapsed(int64_t then)
 }
 
 /* Suspends execution for approximately TICKS timer ticks. */
-<<<<<<< HEAD
-void
-timer_sleep (int64_t ticks) {
-	int64_t start = timer_ticks ();
-
-	ASSERT (intr_get_level () == INTR_ON);
-  thread_sleep(start + ticks);
-=======
 // 타이머 틱(tick) 동안 실행을 일시 중지
 void timer_sleep(int64_t ticks)
 {
 	int64_t start = timer_ticks(); // 현재 시각
 	ASSERT(intr_get_level() == INTR_ON);
 	thread_sleep(start + ticks); // 깨어야 할 시각
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -136,18 +127,11 @@ void timer_print_stats(void)
 
 /* Timer interrupt handler. */
 static void
-<<<<<<< HEAD
-timer_interrupt (struct intr_frame *args UNUSED) {
-  ticks++;
-	thread_tick ();
-  thread_wakeup(ticks);
-=======
 timer_interrupt(struct intr_frame *args UNUSED)
 {
 	ticks++;
 	thread_tick();
 	thread_wakeup(ticks);
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

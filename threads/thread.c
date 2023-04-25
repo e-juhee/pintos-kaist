@@ -29,8 +29,6 @@
 static struct list ready_list;
 static struct list sleep_list;
 
-static struct list sleep_list;
-
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -94,58 +92,11 @@ static uint64_t gdt[3] = {0, 0x00af9a000000ffff, 0x00cf92000000ffff};
 
    It is not safe to call thread_current() until this function
    finishes. */
-<<<<<<< HEAD
 
-bool thread_wakeup_less(const struct list_elem *a, const struct list_elem *b, void *aux) {
-    const struct thread *thread_a = list_entry(a, struct thread, elem);
-    const struct thread *thread_b = list_entry(b, struct thread, elem);
-    return thread_a->wakeup_ticks < thread_b->wakeup_ticks;
-}
 
-/* 스레드 재우기 */
-void thread_sleep(int64_t target_ticks) {
-	struct thread *cur = thread_current();;
-  enum intr_level old_level;
-
-  old_level = intr_disable ();
-  if (cur != idle_thread) {
-
-    cur->wakeup_ticks = target_ticks;
-    list_insert_ordered(&sleep_list, &cur->elem, thread_wakeup_less, NULL);
-    thread_block();
-		intr_set_level(old_level);
-  }
-}
-
-/* 스레드 깨우기 */
-void thread_wakeup(int64_t ticks){
-  enum intr_level old_level;
-	struct list_elem *e = list_begin(&sleep_list);
-  // ASSERT (!intr_context ());
-  old_level = intr_disable(); // 인터럽트 비활성화
-
-  while(e != list_end(&sleep_list))
-  {
-    // e가 가리키는 list_elem의 시작 주소로부터 struct sleep_list 구조체의 주소를 계산
-    struct thread *t = list_entry(e, struct thread, elem);
-    if(ticks < t->wakeup_ticks)
-    {
-			break;
-    }
-		e = list_remove(e); // slee_list에서 해당 스레드 꺼낸다.
-		thread_unblock(t); // 꺼내고 unblock처리해서 ready_list에 넣고, 스레드를 준비 상태로 만든다.
-  }
-  intr_set_level(old_level); // 이전에 저장한 인터럽트 활성화
-}
-
-void
-thread_init (void) {
-	ASSERT (intr_get_level () == INTR_OFF);
-=======
 void thread_init(void)
 {
 	ASSERT(intr_get_level() == INTR_OFF);
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 
 	/* Reload the temporal gdt for the kernel
 	 * This gdt does not include the user context.
@@ -156,17 +107,10 @@ void thread_init(void)
 	lgdt(&gdt_ds);
 
 	/* Init the globla thread context */
-<<<<<<< HEAD
-	lock_init (&tid_lock);
-	list_init (&ready_list);
-	list_init (&sleep_list);
-	list_init (&destruction_req);
-=======
 	lock_init(&tid_lock);
 	list_init(&ready_list);
 	list_init(&sleep_list); // sleep_list 초기화
 	list_init(&destruction_req);
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -234,6 +178,26 @@ void thread_print_stats(void)
    The code provided sets the new thread's `priority' member to
    PRIORITY, but no actual priority scheduling is implemented.
    Priority scheduling is the goal of Problem 1-3. */
+
+bool cmp_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+    struct thread *st_a = list_entry(a, struct thread, elem);
+    struct thread *st_b = list_entry(b, struct thread, elem);
+    return st_a->priority > st_b->priority;
+}
+
+void preempt_priority(void){
+	if (thread_current() == idle_thread)
+			return;
+	if (list_empty(&ready_list))
+			return;
+	struct thread *cur = thread_current();
+	struct thread *first_ready = list_entry(list_front(&ready_list), struct thread, elem);
+
+	if(first_ready->priority > cur->priority){ // ready_list 첫번째 스레드가 현재 실행 스레드보다 우선순위가 높으면, 양보
+		thread_yield(); 
+	}
+}
+
 tid_t thread_create(const char *name, int priority,
 					thread_func *function, void *aux)
 {
@@ -264,7 +228,7 @@ tid_t thread_create(const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock(t);
-
+	preempt_priority();
 	return tid;
 }
 
@@ -298,7 +262,7 @@ void thread_unblock(struct thread *t)
 
 	old_level = intr_disable();
 	ASSERT(t->status == THREAD_BLOCKED);
-	list_push_back(&ready_list, &t->elem);
+	list_insert_ordered(&ready_list, &t->elem, cmp_thread_priority, NULL);
 	t->status = THREAD_READY;
 	intr_set_level(old_level);
 }
@@ -363,7 +327,7 @@ void thread_yield(void)
 
 	old_level = intr_disable(); // 인터럽트 비활성
 	if (curr != idle_thread)
-		list_push_back(&ready_list, &curr->elem); // ready_list의 마지막에 배치
+	list_insert_ordered(&ready_list, &curr->elem, cmp_thread_priority, NULL); // ready_list에 우선순위대로 삽입
 	do_schedule(THREAD_READY);					  // 현재 실행 중인 스레드의 상태를 준비 상태로 변경, 컨텍스트 전환
 	intr_set_level(old_level);					  // 인터럽트 상태를 원래 상태로 변경
 }
@@ -399,6 +363,7 @@ void thread_wakeup(int64_t global_ticks)
 		{
 			curr_elem = list_remove(curr_elem); // sleep_list에서 제거 & curr_elem에는 다음 elem이 담김
 			thread_unblock(curr_thread);		// ready_list로 이동
+			preempt_priority();
 		}
 		else
 			break;
@@ -406,17 +371,18 @@ void thread_wakeup(int64_t global_ticks)
 	intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
 }
 
-bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
-{
-	struct thread *st_a = list_entry(a, struct thread, elem);
-	struct thread *st_b = list_entry(b, struct thread, elem);
-	return st_a->wakeup_ticks < st_b->wakeup_ticks;
+bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+    struct thread *st_a = list_entry(a, struct thread, elem);
+    struct thread *st_b = list_entry(b, struct thread, elem);
+    return st_a->wakeup_ticks < st_b->wakeup_ticks;
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-	thread_current()->priority = new_priority;
+	thread_current()->origin_priority = new_priority;
+	update_priority_before_donation(); // donor 중 우선순위 더 높은 게 있으면 그거로 갱신
+	preempt_priority();
 }
 
 /* Returns the current thread's priority. */
@@ -520,6 +486,10 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->tf.rsp = (uint64_t)t + PGSIZE - sizeof(void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+
+	t->origin_priority = priority;
+	t->wait_on_lock = NULL;
+	list_init(&t->donation_list);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should

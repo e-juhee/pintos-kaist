@@ -94,7 +94,11 @@ struct thread
 	int priority;			   /* Priority. */
 	int64_t wakeup_ticks;	   // 깨어날 tick
 
-	int64_t wakeup_ticks;
+	int origin_priority;
+	struct lock *wait_on_lock;
+	struct list donation_list;
+	struct list_elem donation_elem;
+
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem; /* List element. */
 
@@ -112,7 +116,7 @@ struct thread
 	unsigned magic;		  /* Detects stack overflow. */
 };
 
-bool thread_wakeup_less(const struct list_elem *a, const struct list_elem *b, void *aux);
+// bool cmp_donation_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -125,16 +129,8 @@ void thread_start(void);
 void thread_tick(void);
 void thread_print_stats(void);
 
-<<<<<<< HEAD
-void thread_sleep(int64_t target_ticks);
-void thread_wakeup(int64_t ticks);
-
-typedef void thread_func (void *aux);
-tid_t thread_create (const char *name, int priority, thread_func *, void *);
-=======
 typedef void thread_func(void *aux);
 tid_t thread_create(const char *name, int priority, thread_func *, void *);
->>>>>>> 1779f47d72aa8fb7f09c60e18f26fd80e26bd2f3
 
 void thread_block(void);
 void thread_unblock(struct thread *);
@@ -158,5 +154,8 @@ int thread_get_recent_cpu(void);
 int thread_get_load_avg(void);
 
 void do_iret(struct intr_frame *tf);
+
+bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void *aux);
+bool cmp_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 #endif /* threads/thread.h */
