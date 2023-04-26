@@ -114,13 +114,13 @@ void sema_up(struct semaphore *sema)
 	old_level = intr_disable();
 	if (!list_empty(&sema->waiters)) // 대기 중인 스레드를 깨움
 	{
-		list_sort(&sema->waiters, cmp_thread_priority, NULL); // 🚨 이거 필요한가?
-		thread_unblock(list_entry(list_pop_front(&sema->waiters),
-								  struct thread, elem));
+		// waiters에 들어있는 스레드가 donate를 받아 우선순위가 달라졌을 수 있기 때문에 재정렬
+		list_sort(&sema->waiters, cmp_thread_priority, NULL);
+		thread_unblock(list_entry(list_pop_front(&sema->waiters), struct thread, elem));
 	}
 	sema->value++;
 	intr_set_level(old_level);
-	preempt_priority();
+	preempt_priority(); // unblock이 호출되며 ready_list가 수정되었으므로 선점 여부 확인
 }
 
 static void sema_test_helper(void *sema_);
@@ -243,7 +243,7 @@ void lock_release(struct lock *lock)
 	ASSERT(lock_held_by_current_thread(lock));
 
 	remove_donor(lock);
-	update_priority_before_donations();
+	update_priority_for_donations();
 
 	lock->holder = NULL;
 	sema_up(&lock->semaphore);
@@ -383,19 +383,15 @@ void donate_priority(void)
 	struct thread *curr = thread_current(); // 검사중인 스레드
 	struct thread *holder;					// curr이 원하는 락을 가진드스레드
 
-	// struct thread *holder = curr->wait_on_lock->holder;
 	int priority = curr->priority;
 
 	for (int i = 0; i < 8; i++)
 	{
-		// holder = curr->wait_on_lock->holder;
 		if (curr->wait_on_lock == NULL) // 더이상 중첩되지 않았으면 종료
 			return;
 		holder = curr->wait_on_lock->holder;
 		if (holder->priority < priority)
 			holder->priority = priority;
-		// if (holder->priority < curr->priority)
-		// 	holder->priority = curr->priority;
 		curr = holder;
 	}
 }
@@ -424,7 +420,7 @@ void remove_donor(struct lock *lock)
 }
 
 // 락을 release하고 나서 priority를 상속 받기 이전 상태로 돌리는 함수
-void update_priority_before_donations(void)
+void update_priority_for_donations(void)
 {
 	struct thread *curr = thread_current();
 	struct list *donations = &(thread_current()->donations);
@@ -436,10 +432,6 @@ void update_priority_before_donations(void)
 		return;
 	}
 
-	// else
-	// donor가 더 남아있다면, donor 중 가장 높은 priority(root의 우선순위) 상속받기
 	donations_root = list_entry(list_front(donations), struct thread, donation_elem);
-
 	curr->priority = donations_root->priority;
-	// curr->priority = curr->init_priority; // 최초의 priority로 변경
 }
