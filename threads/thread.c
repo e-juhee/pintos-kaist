@@ -206,6 +206,7 @@ tid_t thread_create(const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock(t);
+	preempt_priority();
 
 	return tid;
 }
@@ -240,9 +241,10 @@ void thread_unblock(struct thread *t)
 
 	old_level = intr_disable();
 	ASSERT(t->status == THREAD_BLOCKED);
-	list_push_back(&ready_list, &t->elem);
+	list_insert_ordered(&ready_list, &t->elem, cmp_thread_priority, NULL);
 	t->status = THREAD_READY;
 	intr_set_level(old_level);
+	// preempt_priority();
 }
 
 /* Returns the name of the running thread. */
@@ -305,13 +307,13 @@ void thread_yield(void)
 
 	old_level = intr_disable(); // 인터럽트 비활성
 	if (curr != idle_thread)
-		list_push_back(&ready_list, &curr->elem); // ready_list의 마지막에 배치
-	do_schedule(THREAD_READY);					  // 현재 실행 중인 스레드의 상태를 준비 상태로 변경, 컨텍스트 전환
-	intr_set_level(old_level);					  // 인터럽트 상태를 원래 상태로 변경
+		list_insert_ordered(&ready_list, &curr->elem, cmp_thread_priority, NULL);
+	do_schedule(THREAD_READY); // 현재 실행 중인 스레드의 상태를 준비 상태로 변경, 컨텍스트 전환
+	intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
 }
 
 void thread_sleep(int64_t ticks)
-{ // ticks: 깨어야 할 시각
+{
 	struct thread *curr;
 	enum intr_level old_level;
 
@@ -322,12 +324,13 @@ void thread_sleep(int64_t ticks)
 	curr->wakeup_ticks = ticks;	 // 일어날 시각 저장
 
 	list_insert_ordered(&sleep_list, &curr->elem, cmp_thread_ticks, NULL); // sleep_list에 추가
-	thread_block();														   // 현재 스레드 재우고 ready_list의 스레드 실행
+
+	thread_block(); // 현재 스레드 재우고 ready_list의 스레드 실행
 
 	intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
 }
 
-void thread_wakeup(int64_t global_ticks)
+void thread_wakeup(int64_t current_ticks)
 {
 	enum intr_level old_level;
 	old_level = intr_disable(); // 인터럽트 비활성
@@ -337,10 +340,11 @@ void thread_wakeup(int64_t global_ticks)
 	{
 		struct thread *curr_thread = list_entry(curr_elem, struct thread, elem); // 현재 검사중인 elem의 스레드
 
-		if (global_ticks >= curr_thread->wakeup_ticks) // 깰 시간이 됐으면
+		if (current_ticks >= curr_thread->wakeup_ticks) // 깰 시간이 됐으면
 		{
 			curr_elem = list_remove(curr_elem); // sleep_list에서 제거 & curr_elem에는 다음 elem이 담김
 			thread_unblock(curr_thread);		// ready_list로 이동
+			preempt_priority();
 		}
 		else
 			break;
@@ -348,6 +352,7 @@ void thread_wakeup(int64_t global_ticks)
 	intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
 }
 
+// 두 스레드의 wakeup_ticks를 비교해서 작으면 true를 반환하는 함수
 bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
 {
 	struct thread *st_a = list_entry(a, struct thread, elem);
@@ -358,13 +363,36 @@ bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-	thread_current()->priority = new_priority;
+	thread_current()->init_priority = new_priority;
+	update_priority_for_donations();
+	preempt_priority();
 }
 
 /* Returns the current thread's priority. */
 int thread_get_priority(void)
 {
 	return thread_current()->priority;
+}
+
+// 두 스레드의 priority를 비교해서 높으면 true를 반환하는 함수
+bool cmp_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
+{
+	struct thread *st_a = list_entry(a, struct thread, elem);
+	struct thread *st_b = list_entry(b, struct thread, elem);
+	return st_a->priority > st_b->priority;
+}
+
+// ready_list에 있는 스레드의 우선순위가 현재 실행중인 스레드의 우선순위보다 높으면 선점하는 함수
+void preempt_priority(void)
+{
+	if (thread_current() == idle_thread)
+		return;
+	if (list_empty(&ready_list))
+		return;
+	struct thread *curr = thread_current();
+	struct thread *ready = list_entry(list_front(&ready_list), struct thread, elem);
+	if (curr->priority < ready->priority) // ready_list에 현재 실행중인 스레드보다 우선순위가 높은 스레드가 있으면
+		thread_yield();
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -462,6 +490,10 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->tf.rsp = (uint64_t)t + PGSIZE - sizeof(void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+
+	t->init_priority = priority;
+	t->wait_on_lock = NULL;
+	list_init(&(t->donations));
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
