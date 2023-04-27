@@ -4,7 +4,7 @@ Kernel command line: -q run alarm-priority
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  209,510,400 loops/s.
+Calibrating timer...  208,691,200 loops/s.
 Boot complete.
 Executing 'alarm-priority':
 (alarm-priority) begin
@@ -20,8 +20,8 @@ Executing 'alarm-priority':
 (alarm-priority) Thread priority 21 woke up.
 (alarm-priority) end
 Execution of 'alarm-priority' complete.
-Timer: 522 ticks
-Thread: 490 idle ticks, 32 kernel ticks, 0 user ticks
+Timer: 524 ticks
+Thread: 490 idle ticks, 34 kernel ticks, 0 user ticks
 Console: 880 characters output
 Keyboard: 0 keys pressed
 Powering off...
