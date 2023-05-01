@@ -204,7 +204,8 @@ int process_exec(void *f_name)
 
 	argument_stack(parse, count, &_if.rsp); // 함수 내부에서 parse와 rsp의 값을 직접 변경하기 위해 주소 전달
 	_if.R.rdi = count;
-	_if.R.rsi = parse[0];
+	_if.R.rsi = (char *)_if.rsp + 8;
+	// _if.R.rsi = parse[0];
 
 	hex_dump(_if.rsp, _if.rsp, USER_STACK - (uint64_t)_if.rsp, true); // user stack을 16진수로 프린트
 
