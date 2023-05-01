@@ -10,6 +10,7 @@
 
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
+void check_address(void *addr);
 
 /* System call.
  *
@@ -48,4 +49,10 @@ void syscall_handler(struct intr_frame *f UNUSED)
 		halt();
 		break;
 	}
+}
+
+void check_address(void *addr)
+{
+	if (!is_user_vaddr(addr) || addr == NULL) // 유저 영역이 아니거나 NULL이면 프로세스 종료
+		exit(-1);
 }
