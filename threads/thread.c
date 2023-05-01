@@ -186,6 +186,8 @@ bool cmp_thread_priority(const struct list_elem *a, const struct list_elem *b, v
 }
 
 void preempt_priority(void){
+	// ASSERT(thread_current() != idle_thread);
+	// ASSERT(!list_empty(&ready_list))
 	if (thread_current() == idle_thread)
 			return;
 	if (list_empty(&ready_list))
