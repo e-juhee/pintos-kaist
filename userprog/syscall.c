@@ -51,6 +51,11 @@ void syscall_handler(struct intr_frame *f UNUSED)
 	}
 }
 
+void halt(void)
+{
+	power_off();
+}
+
 void check_address(void *addr)
 {
 	if (!is_user_vaddr(addr) || addr == NULL) // 유저 영역이 아니거나 NULL이면 프로세스 종료
