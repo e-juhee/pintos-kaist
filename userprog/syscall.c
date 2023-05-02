@@ -66,7 +66,7 @@ void syscall_handler(struct intr_frame *f UNUSED)
 	case SYS_OPEN:
 		open(f->R.rdi);
 	case SYS_FILESIZE:
-		open(f->R.rdi);
+		filesize(f->R.rdi);
 	case SYS_READ:
 		read(f->R.rdi, f->R.rsi, f->R.rdx);
 	case SYS_WRITE:
@@ -131,11 +131,14 @@ int open(const char *file)
 	return fd;
 }
 
-/**************************************************/
-
 int filesize(int fd)
 {
+	struct file *file = process_get_file(fd);
+	if (file == NULL)
+		return -1;
+	return file_length(file);
 }
+/**************************************************/
 
 int read(int fd, void *buffer, unsigned size)
 {

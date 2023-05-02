@@ -664,11 +664,25 @@ int process_add_file(struct file *f)
 		return -1;
 	fdt[next_fd] = f;
 
+	// 빈자리에 추가하는 로직으로 수정하기
+
 	/* 파일 디스크립터의 최대값 1 증가 */
 	curr->next_fd = next_fd + 1;
 
 	/* 파일 디스크립터 리턴 */
 	return next_fd;
+}
+
+// 파일 객체를 검색하는 함수
+struct file *process_get_file(int fd)
+{
+	struct thread *curr = thread_current();
+	struct file **fdt = curr->fdt;
+	if (fd < 0 || fd > 127)
+		return NULL;
+	return fdt[fd];
+	/* 파일 디스크립터에 해당하는 파일 객체를 리턴 */
+	/* 없을 시 NULL 리턴 */
 }
 
 #else
