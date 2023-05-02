@@ -50,7 +50,9 @@ tid_t process_create_initd(const char *file_name)
 	if (fn_copy == NULL)
 		return TID_ERROR;
 	strlcpy(fn_copy, file_name, PGSIZE);
-	// fn_copy -> 첫번째 공백 전까지 parsing한 값으로 변경하기
+
+	char *save_ptr;
+	strtok_r(file_name, " ", &save_ptr);
 
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create(file_name, PRI_DEFAULT, initd, fn_copy);
@@ -207,7 +209,7 @@ int process_exec(void *f_name)
 	_if.R.rsi = (char *)_if.rsp + 8;
 	// _if.R.rsi = parse[0];
 
-	hex_dump(_if.rsp, _if.rsp, USER_STACK - (uint64_t)_if.rsp, true); // user stack을 16진수로 프린트
+	// hex_dump(_if.rsp, _if.rsp, USER_STACK - (uint64_t)_if.rsp, true); // user stack을 16진수로 프린트
 
 	palloc_free_page(file_name);
 
@@ -481,6 +483,8 @@ load(const char *file_name, struct intr_frame *if_)
 			break;
 		}
 	}
+
+	// file_deny_write(file);
 
 	/* Set up stack. */
 	if (!setup_stack(if_)) // user stack 초기화

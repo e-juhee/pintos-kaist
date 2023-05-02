@@ -10,6 +10,9 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "intrinsic.h"
+#include "threads/synch.h"
+#include "devices/input.h"
+#include "lib/kernel/stdio.h"
 
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
@@ -25,9 +28,9 @@ int write(int fd, const void *buffer, unsigned size);
 void seek(int fd, unsigned position);
 unsigned tell(int fd);
 void close(int fd);
-pid_t fork(const char *thread_name);
+int fork(const char *thread_name);
 int exec(const char *file);
-int wait(pid_t pid);
+int wait(int pid);
 
 /* System call.
  *
@@ -53,6 +56,7 @@ void syscall_init(void)
 	 * mode stack. Therefore, we masked the FLAG_FL. */
 	write_msr(MSR_SYSCALL_MASK,
 			  FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
+	lock_init(&filesys_lock);
 }
 
 /* The main system call interface */
@@ -68,13 +72,13 @@ void syscall_handler(struct intr_frame *f UNUSED)
 	case SYS_EXIT:
 		exit(f->R.rdi);
 		break;
-	case SYS_FORK:
-		f->R.rax = fork(f->R.rdi);
-	case SYS_EXEC:
-		f->R.rax = exec(f->R.rdi);
-		break;
-	case SYS_WAIT:
-		f->R.rax = wait(f->R.rdi);
+	// case SYS_FORK:
+	// 	f->R.rax = fork(f->R.rdi);
+	// case SYS_EXEC:
+	// 	f->R.rax = exec(f->R.rdi);
+	// 	break;
+	// case SYS_WAIT:
+	// 	f->R.rax = wait(f->R.rdi);
 	case SYS_CREATE:
 		f->R.rax = create(f->R.rdi, f->R.rsi);
 		break;
@@ -162,14 +166,61 @@ int filesize(int fd)
 		return -1;
 	return file_length(file);
 }
-/**************************************************/
 
 int read(int fd, void *buffer, unsigned size)
 {
+	check_address(buffer);
+
+	char *ptr = (char *)buffer;
+	int bytes_read = 0;
+
+	if (fd == STDIN_FILENO)
+	{
+		for (int i = 0; i < size; i++)
+		{
+			char ch = input_getc();
+			if (ch == '\n')
+				break;
+			*ptr = ch;
+			ptr++;
+			bytes_read++;
+		}
+	}
+	else
+	{
+		if (fd < 2)
+			return -1;
+		struct file *file = process_get_file(fd);
+		if (file == NULL)
+			return -1;
+		lock_acquire(&filesys_lock);
+		bytes_read = file_read(file, buffer, size);
+		lock_release(&filesys_lock);
+	}
+	return bytes_read;
 }
 
 int write(int fd, const void *buffer, unsigned size)
 {
+	check_address(buffer);
+	int bytes_write = 0;
+	if (fd == STDOUT_FILENO)
+	{
+		putbuf(buffer, size);
+		bytes_write = size;
+	}
+	else
+	{
+		if (fd < 2)
+			return -1;
+		struct file *file = process_get_file(fd);
+		if (file == NULL)
+			return -1;
+		lock_acquire(&filesys_lock);
+		bytes_write = file_write(file, buffer, size);
+		lock_release(&filesys_lock);
+	}
+	return bytes_write;
 }
 
 void seek(int fd, unsigned position)
@@ -202,6 +253,8 @@ void close(int fd)
 	file_close(file);
 	process_close_file(fd);
 }
+
+/**************************************************/
 
 int fork(const char *thread_name)
 {
