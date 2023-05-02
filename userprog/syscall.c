@@ -6,6 +6,7 @@
 #include "threads/loader.h"
 #include "userprog/gdt.h"
 #include "threads/flags.h"
+#include "filesys/filesys.h"
 #include "intrinsic.h"
 
 void syscall_entry(void);
@@ -48,7 +49,45 @@ void syscall_handler(struct intr_frame *f UNUSED)
 	case SYS_HALT:
 		halt();
 		break;
+	case SYS_EXIT:
+		exit(f->R.rdi);
+	case SYS_FORK:
+		fork(f->R.rdi);
+	case SYS_EXEC:
+		exec(f->R.rdi);
+	case SYS_WAIT:
+		wait(f->R.rdi);
+	case SYS_CREATE:
+		create(f->R.rdi, f->R.rsi);
+	case SYS_REMOVE:
+		remove(f->R.rdi);
+	case SYS_OPEN:
+		open(f->R.rdi);
+	case SYS_FILESIZE:
+		open(f->R.rdi);
+	case SYS_READ:
+		read(f->R.rdi, f->R.rsi, f->R.rdx);
+	case SYS_WRITE:
+		write(f->R.rdi, f->R.rsi, f->R.rdx);
+	case SYS_SEEK:
+		seek(f->R.rdi, f->R.rsi);
+	case SYS_TELL:
+		tell(f->R.rdi);
+	case SYS_CLOSE:
+		close(f->R.rdi);
 	}
+}
+
+void check_address(void *addr)
+{
+	if (addr == NULL)
+		exit(-1);
+
+	if (!is_user_vaddr(addr)) // 유저 영역이 아니거나 NULL이면 프로세스 종료
+		exit(-1);
+
+	if (pml4_get_page(thread_current()->pml4, addr) == NULL)
+		exit(-1);
 }
 
 void halt(void)
@@ -56,8 +95,22 @@ void halt(void)
 	power_off();
 }
 
-void check_address(void *addr)
+void exit(int status)
 {
-	if (!is_user_vaddr(addr) || addr == NULL) // 유저 영역이 아니거나 NULL이면 프로세스 종료
-		exit(-1);
+	struct thread *curr = thread_current();
+	curr->exit_status = status; // 이거 wait에서 사용?
+	printf("%s: exit(%d)\n", curr->name, status);
+	thread_exit();
+}
+
+bool create(const char *file, unsigned initial_size)
+{
+	check_address(file);
+	return filesys_create(file, initial_size);
+}
+
+bool remove(const char *file)
+{
+	check_address(file);
+	return filesys_remove(file);
 }
