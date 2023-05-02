@@ -184,6 +184,12 @@ void seek(int fd, unsigned position)
 
 unsigned tell(int fd)
 {
+	if (fd < 2)
+		return;
+	struct file *file = process_get_file(fd);
+	if (file == NULL)
+		return;
+	return file_tell(file);
 }
 
 void close(int fd)
