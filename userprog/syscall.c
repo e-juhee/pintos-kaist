@@ -194,6 +194,13 @@ unsigned tell(int fd)
 
 void close(int fd)
 {
+	if (fd < 2)
+		return;
+	struct file *file = process_get_file(fd);
+	if (file == NULL)
+		return;
+	file_close(file);
+	process_close_file(fd);
 }
 
 int fork(const char *thread_name)
