@@ -5,8 +5,10 @@
 #include "threads/thread.h"
 #include "threads/loader.h"
 #include "userprog/gdt.h"
+#include "userprog/process.h"
 #include "threads/flags.h"
 #include "filesys/filesys.h"
+#include "filesys/file.h"
 #include "intrinsic.h"
 
 void syscall_entry(void);
@@ -113,4 +115,56 @@ bool remove(const char *file)
 {
 	check_address(file);
 	return filesys_remove(file);
+}
+
+int open(const char *file)
+{
+	check_address(file);
+	struct file *opend_file = filesys_open(file);
+	if (opend_file == NULL)
+		return -1;
+
+	int fd = process_add_file(opend_file);
+	if (fd == -1)
+		file_close(opend_file);
+
+	return fd;
+}
+
+/**************************************************/
+
+int filesize(int fd)
+{
+}
+
+int read(int fd, void *buffer, unsigned size)
+{
+}
+
+int write(int fd, const void *buffer, unsigned size)
+{
+}
+
+void seek(int fd, unsigned position)
+{
+}
+
+unsigned tell(int fd)
+{
+}
+
+void close(int fd)
+{
+}
+
+pid_t fork(const char *thread_name)
+{
+}
+
+int exec(const char *file)
+{
+}
+
+int wait(pid_t pid)
+{
 }
