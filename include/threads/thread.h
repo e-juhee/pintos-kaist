@@ -103,7 +103,7 @@ struct thread
 	struct list_elem donation_elem;
 
 	int exit_status;
-	struct file fdt[128];
+	struct file *fdt[128];
 	int next_fd;
 
 #ifdef USERPROG

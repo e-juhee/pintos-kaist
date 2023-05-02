@@ -14,6 +14,20 @@
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
 void check_address(void *addr);
+void halt(void);
+void exit(int status);
+bool create(const char *file, unsigned initial_size);
+bool remove(const char *file);
+int open(const char *file_name);
+int filesize(int fd);
+int read(int fd, void *buffer, unsigned size);
+int write(int fd, const void *buffer, unsigned size);
+void seek(int fd, unsigned position);
+unsigned tell(int fd);
+void close(int fd);
+pid_t fork(const char *thread_name);
+int exec(const char *file);
+int wait(pid_t pid);
 
 /* System call.
  *
@@ -53,28 +67,38 @@ void syscall_handler(struct intr_frame *f UNUSED)
 		break;
 	case SYS_EXIT:
 		exit(f->R.rdi);
+		break;
 	case SYS_FORK:
-		fork(f->R.rdi);
+		f->R.rax = fork(f->R.rdi);
 	case SYS_EXEC:
-		exec(f->R.rdi);
+		f->R.rax = exec(f->R.rdi);
+		break;
 	case SYS_WAIT:
-		wait(f->R.rdi);
+		f->R.rax = wait(f->R.rdi);
 	case SYS_CREATE:
-		create(f->R.rdi, f->R.rsi);
+		f->R.rax = create(f->R.rdi, f->R.rsi);
+		break;
 	case SYS_REMOVE:
-		remove(f->R.rdi);
+		f->R.rax = remove(f->R.rdi);
+		break;
 	case SYS_OPEN:
-		open(f->R.rdi);
+		f->R.rax = open(f->R.rdi);
+		break;
 	case SYS_FILESIZE:
-		filesize(f->R.rdi);
+		f->R.rax = filesize(f->R.rdi);
+		break;
 	case SYS_READ:
-		read(f->R.rdi, f->R.rsi, f->R.rdx);
+		f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
+		break;
 	case SYS_WRITE:
-		write(f->R.rdi, f->R.rsi, f->R.rdx);
+		f->R.rax = write(f->R.rdi, f->R.rsi, f->R.rdx);
+		break;
 	case SYS_SEEK:
 		seek(f->R.rdi, f->R.rsi);
+		break;
 	case SYS_TELL:
-		tell(f->R.rdi);
+		f->R.rax = tell(f->R.rdi);
+		break;
 	case SYS_CLOSE:
 		close(f->R.rdi);
 	}
@@ -150,6 +174,12 @@ int write(int fd, const void *buffer, unsigned size)
 
 void seek(int fd, unsigned position)
 {
+	if (fd < 2)
+		return;
+	struct file *file = process_get_file(fd);
+	if (file == NULL)
+		return;
+	file_seek(file, position);
 }
 
 unsigned tell(int fd)
@@ -160,7 +190,7 @@ void close(int fd)
 {
 }
 
-pid_t fork(const char *thread_name)
+int fork(const char *thread_name)
 {
 }
 
@@ -168,6 +198,6 @@ int exec(const char *file)
 {
 }
 
-int wait(pid_t pid)
+int wait(int pid)
 {
 }
