@@ -117,16 +117,16 @@ bool remove(const char *file)
 	return filesys_remove(file);
 }
 
-int open(const char *file)
+int open(const char *file_name)
 {
-	check_address(file);
-	struct file *opend_file = filesys_open(file);
-	if (opend_file == NULL)
+	check_address(file_name);
+	struct file *file = filesys_open(file_name);
+	if (file == NULL)
 		return -1;
 
-	int fd = process_add_file(opend_file);
+	int fd = process_add_file(file);
 	if (fd == -1)
-		file_close(opend_file);
+		file_close(file);
 
 	return fd;
 }
