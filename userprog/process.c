@@ -26,10 +26,7 @@ static void process_cleanup(void);
 static bool load(const char *file_name, struct intr_frame *if_);
 static void initd(void *f_name);
 static void __do_fork(void *);
-struct file *process_get_file (int fd);
-int process_add_file(struct file *f);
-void process_close_file (int fd);
-
+ 
 struct file *process_get_file(int fd)
 {
 	if (fd < 0 || fd >= 128)
@@ -44,7 +41,7 @@ int process_add_file (struct file *f)
 {
 	/* 파일 객체를 파일 디스크립터 테이블에 추가 */
 	struct thread *curr = thread_current();
-	struct file **fdt = curr->next_fd;
+	struct file **fdt = curr->fdt;
 	// 파일 테이블에 없는 파일 디스크립터 찾기
 	while((curr->next_fd < 128) && fdt[curr->next_fd])
 	{
@@ -64,12 +61,11 @@ void process_close_file(int fd)
 {
 	/* 파일 디스크립터에 해당하는 파일을 닫고 해당 엔트리 초기화 */
 	struct thread *curr = thread_current();
-	struct file **fdt = curr->fdt;
 	if (fd < 0 || fd >= 128)
 	{
 		return NULL;
 	}
-	fdt[fd] = NULL;
+	curr->fdt[fd] = NULL;
 	/* 파일 디스크립터에 해당하는 파일을 닫음 */
 	/* 파일 디스크립터 테이블 해당 엔트리 초기화 */
 }
@@ -326,11 +322,18 @@ int process_wait(tid_t child_tid UNUSED)
 void process_exit(void)
 {
 	struct thread *curr = thread_current();
-	/* TODO: Your code goes here.
-	 * TODO: Implement process termination message (see
-	 * TODO: project2/process_termination.html).
-	 * TODO: We recommend you to implement process resource cleanup here. */
 
+  for (int i = 2; i < 128; i++)
+  {
+    /* 현재 파일 디스크립터가 열린 상태인 경우 */
+    if (curr->fdt[i] != NULL)
+    {
+      /* 해당 파일 디스크립터를 닫음 */
+      file_close(curr->fdt[i]);
+      /* 파일 테이블에서 해당 파일 디스크립터를 제거 */
+      curr->fdt[i] = NULL;
+    }
+  }
 	process_cleanup();
 }
 

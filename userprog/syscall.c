@@ -10,6 +10,7 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/synch.h"
+#include "userprog/process.h"
 
 
 void syscall_entry (void);
@@ -236,8 +237,8 @@ int filesize(int fd)
 int read(int fd, void *buffer, unsigned size)
 {
 	check_address(buffer);
-	off_t read_byte;
-	uint8_t *read_buffer = buffer;
+	off_t read_byte = 0;
+	uint8_t *read_buffer = (char *)buffer;
 	if (fd == 0)
 	{
 		char key;
@@ -245,7 +246,7 @@ int read(int fd, void *buffer, unsigned size)
 		{
 			key = input_getc(); // 키보드에 한 문자 입력받기
 			*read_buffer++ = key; // read_buffer에 받은 문자 저장
-			if (key == '\0')
+			if (key == '\n')
 			{
 				break;
 			}
@@ -274,21 +275,26 @@ int read(int fd, void *buffer, unsigned size)
 */
 int write(int fd, const void *buffer, unsigned size)
 {
+	check_address(buffer);
 	struct file *write_file = process_get_file(fd);
-	lock_acquire(&filesys_lock);
+	int bytes_write;
 	if(fd < 2)
 	{
 		if (fd == 1)
 		{
 			putbuf(buffer, size);
+			bytes_write = size;
+			return size;
 		}
 		return -1;
 	}
 	else
 	{
-		file_write(write_file, buffer, size);
+		lock_acquire(&filesys_lock);
+		bytes_write = file_write(write_file, buffer, size);
+		lock_release(&filesys_lock);
 	}
-	lock_release(&filesys_lock);
+	return bytes_write;
 }
 
 /*
@@ -297,7 +303,11 @@ int write(int fd, const void *buffer, unsigned size)
 void seek(int fd, unsigned position)
 {
 	struct file *seek_file = process_get_file(fd);
-	if (seek_file <= 2)
+	if (fd < 2)
+	{
+		return;
+	}
+	if (seek_file == NULL)
 	{
 		return;
 	}
@@ -310,7 +320,11 @@ void seek(int fd, unsigned position)
 unsigned tell(int fd)
 {
 	struct file *tell_file = process_get_file(fd);
-	if (tell_file <= 2)
+	if (fd < 2)
+	{
+		return;
+	}
+	if (tell_file == NULL)
 	{
 		return;
 	}
@@ -323,9 +337,14 @@ unsigned tell(int fd)
 void close (int fd)
 {
 	struct file *close_file = process_get_file(fd);
+	if (fd < 2)
+	{
+		return;
+	}
 	if (close_file == NULL)
 	{
 		return;
 	}
 	file_close(close_file);
+	process_close_file(fd);
 }
