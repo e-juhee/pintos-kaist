@@ -102,6 +102,10 @@ struct thread
 	struct list donations;
 	struct list_elem donation_elem;
 
+	int exit_status;
+	struct file *fdt[128];
+	int next_fd;
+
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4; /* Page map level 4 */
