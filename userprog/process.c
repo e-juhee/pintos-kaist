@@ -26,6 +26,53 @@ static void process_cleanup(void);
 static bool load(const char *file_name, struct intr_frame *if_);
 static void initd(void *f_name);
 static void __do_fork(void *);
+struct file *process_get_file (int fd);
+int process_add_file(struct file *f);
+void process_close_file (int fd);
+
+struct file *process_get_file(int fd)
+{
+	if (fd < 0 || fd >= 128)
+	{
+		return NULL;
+	}
+	struct thread *curr = thread_current();
+	return curr->fdt[fd];
+}
+
+int process_add_file (struct file *f) 
+{
+	/* 파일 객체를 파일 디스크립터 테이블에 추가 */
+	struct thread *curr = thread_current();
+	struct file **fdt = curr->next_fd;
+	// 파일 테이블에 없는 파일 디스크립터 찾기
+	while((curr->next_fd < 128) && fdt[curr->next_fd])
+	{
+		curr->next_fd++;
+	}
+	// 찾은 파일 디스크립터가 128보다 크거나 같으면 return -1
+	if(curr->next_fd >= 128)
+	{
+		return -1;
+	}
+	// 파일 디스크립터 테이블에 파일 객체 추가하기
+	fdt[curr->next_fd] = f;
+	return curr->next_fd;
+}
+
+void process_close_file(int fd)
+{
+	/* 파일 디스크립터에 해당하는 파일을 닫고 해당 엔트리 초기화 */
+	struct thread *curr = thread_current();
+	struct file **fdt = curr->fdt;
+	if (fd < 0 || fd >= 128)
+	{
+		return NULL;
+	}
+	fdt[fd] = NULL;
+	/* 파일 디스크립터에 해당하는 파일을 닫음 */
+	/* 파일 디스크립터 테이블 해당 엔트리 초기화 */
+}
 
 /* General process initializer for initd and other process. */
 static void
@@ -242,8 +289,8 @@ int process_exec(void *f_name)
 		return -1;
 	}
 	argument_stack(parse, count, &_if.rsp);
-	_if.R.rdi = count;
-	_if.R.rsi = parse[0];
+	_if.R.rdi = count; // 인자 개수
+	_if.R.rsi = parse[0]; // 첫번째 인자
 
 	hex_dump(_if.rsp, _if.rsp, USER_STACK - (uint64_t)_if.rsp, true); // 디버깅 툴
 	/* Start switched process. */

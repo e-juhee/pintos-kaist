@@ -1,0 +1,43 @@
+Kernel command line: -q -f put args-many run 'args-many a b c d e f g h i j k l m n o p q r s t u v'
+0 ~ 9fc00 1
+100000 ~ 13e0000 1
+Pintos booting with: 
+	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
+	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+Calibrating timer...  209,305,600 loops/s.
+hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
+hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
+Formatting file system...done.
+Boot complete.
+Putting 'args-many' into the file system...
+Executing 'args-many a b c d e f g h i j k l m n o p q r s t u v':
+000000004747ff00  00 00 00 00 00 00 00 00-ca ff 47 47 00 00 00 00 |..........GG....|
+000000004747ff10  d4 ff 47 47 00 00 00 00-d6 ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff20  d8 ff 47 47 00 00 00 00-da ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff30  dc ff 47 47 00 00 00 00-de ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff40  e0 ff 47 47 00 00 00 00-e2 ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff50  e4 ff 47 47 00 00 00 00-e6 ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff60  e8 ff 47 47 00 00 00 00-ea ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff70  ec ff 47 47 00 00 00 00-ee ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff80  f0 ff 47 47 00 00 00 00-f2 ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ff90  f4 ff 47 47 00 00 00 00-f6 ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ffa0  f8 ff 47 47 00 00 00 00-fa ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ffb0  fc ff 47 47 00 00 00 00-fe ff 47 47 00 00 00 00 |..GG......GG....|
+000000004747ffc0  00 00 00 00 00 00 00 00-00 00 61 72 67 73 2d 6d |..........args-m|
+000000004747ffd0  61 6e 79 00 61 00 62 00-63 00 64 00 65 00 66 00 |any.a.b.c.d.e.f.|
+000000004747ffe0  67 00 68 00 69 00 6a 00-6b 00 6c 00 6d 00 6e 00 |g.h.i.j.k.l.m.n.|
+000000004747fff0  6f 00 70 00 71 00 72 00-73 00 74 00 75 00 76 00 |o.p.q.r.s.t.u.v.|
+(args) argv and stack must be word-aligned, actually 0x4747ffca
+Kernel PANIC at ../../threads/synch.c:199 in lock_acquire(): assertion `!lock_held_by_current_thread(lock)' failed.
+Call stack: 0x8004217d15 0x800420a0cd 0x800421ceec 0x800421cb26 0x800421c8d3 0x400370 0x4003e4 0x400157 0x400ca6.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 255 ticks
+Thread: 33 idle ticks, 216 kernel ticks, 6 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 80 reads, 232 writes
+hd1:0: 102 reads, 0 writes
+Console: 2652 characters output
+Key

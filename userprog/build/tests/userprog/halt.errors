@@ -1,0 +1,15 @@
+qemu-system-x86_64: warning: TCG doesn't support requested feature: CPUID.01H:ECX.vmx [bit 5]
+Traceback (most recent call last):
+  File "/home/ubuntu/pintos-kaist/utils/pintos", line 225, in <module>
+    guestfns=[f[0].split(':') for f in args.GUESTFNS]).run()
+  File "/home/ubuntu/pintos-kaist/utils/pintos", line 166, in run
+    subprocess.run(cmd, **args)
+  File "/usr/lib/python3.6/subprocess.py", line 425, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+  File "/usr/lib/python3.6/subprocess.py", line 863, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+  File "/usr/lib/python3.6/subprocess.py", line 1560, in _communicate
+    self.wait(timeout=self._remaining_time(endtime))
+  File "/usr/lib/python3.6/subprocess.py", line 1471, in wait
+    time.sleep(delay)
+KeyboardInterrupt
