@@ -204,6 +204,14 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
+	t->fdt = palloc_get_multiple(PAL_ZERO, FDT_PAGES);
+	if (t->fdt == NULL)
+		return TID_ERROR;
+
+	// t->next_fd = 2;
+	// t->fdt[0]=1;
+	// t->fdt[1]=2;
+
 	/* Add to run queue. */
 	thread_unblock(t);
 	preempt_priority();

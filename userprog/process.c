@@ -207,7 +207,6 @@ int process_exec(void *f_name)
 	argument_stack(parse, count, &_if.rsp); // 함수 내부에서 parse와 rsp의 값을 직접 변경하기 위해 주소 전달
 	_if.R.rdi = count;
 	_if.R.rsi = (char *)_if.rsp + 8;
-	// _if.R.rsi = parse[0];
 
 	// hex_dump(_if.rsp, _if.rsp, USER_STACK - (uint64_t)_if.rsp, true); // user stack을 16진수로 프린트
 
@@ -665,9 +664,9 @@ int process_add_file(struct file *f)
 
 	/* 파일 객체를 파일 디스크립터 테이블에 추가 */
 	// limit을 넘지 않는 범위 안에서 빈 자리 탐색
-	while (next_fd < 128 && fdt[next_fd])
+	while (next_fd < FDT_COUNT_LIMIT && fdt[next_fd])
 		next_fd++;
-	if (next_fd >= 128)
+	if (next_fd >= FDT_COUNT_LIMIT)
 		return -1;
 	fdt[next_fd] = f;
 
@@ -685,7 +684,7 @@ struct file *process_get_file(int fd)
 	struct file **fdt = curr->fdt;
 	/* 파일 디스크립터에 해당하는 파일 객체를 리턴 */
 	/* 없을 시 NULL 리턴 */
-	if (fd < 0 || fd > 127)
+	if (fd < 0 || fd > FDT_COUNT_LIMIT)
 		return NULL;
 	return fdt[fd];
 }
@@ -695,7 +694,7 @@ void process_close_file(int fd)
 {
 	struct thread *curr = thread_current();
 	struct file **fdt = curr->fdt;
-	if (fd < 0 || fd > 127)
+	if (fd < 0 || fd > FDT_COUNT_LIMIT)
 		return NULL;
 	fdt[fd] = NULL;
 }
