@@ -1,0 +1,29 @@
+Kernel command line: -q -f put exec-once put child-simple run exec-once
+0 ~ 9fc00 1
+100000 ~ 13e0000 1
+Pintos booting with: 
+	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
+	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+Calibrating timer...  104,857,600 loops/s.
+hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
+hd1:0: detected 203 sector (101 kB) disk, model "QEMU HARDDISK", serial "QM00003"
+Formatting file system...done.
+Boot complete.
+Putting 'exec-once' into the file system...
+Putting 'child-simple' into the file system...
+Executing 'exec-once':
+(exec-once) begin
+(exec-once) I'm your father
+(exec-once) end
+exec-once: exit(0)
+Execution of 'exec-once' complete.
+Timer: 684 ticks
+Thread: 30 idle ticks, 650 kernel ticks, 4 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 106 reads, 444 writes
+hd1:0: 203 reads, 0 writes
+Console: 936 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

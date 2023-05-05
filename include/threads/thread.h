@@ -12,10 +12,10 @@
 /* States in a thread's life cycle. */
 enum thread_status
 {
-	THREAD_RUNNING, /* Running thread. */
-	THREAD_READY,	/* Not running but ready to run. */
-	THREAD_BLOCKED, /* Waiting for an event to trigger. */
-	THREAD_DYING	/* About to be destroyed. */
+    THREAD_RUNNING, /* Running thread. */
+    THREAD_READY,   /* Not running but ready to run. */
+    THREAD_BLOCKED, /* Waiting for an event to trigger. */
+    THREAD_DYING    /* About to be destroyed. */
 };
 
 /* Thread identifier type.
@@ -24,9 +24,12 @@ typedef int tid_t;
 #define TID_ERROR ((tid_t)-1) /* Error value for tid_t. */
 
 /* Thread priorities. */
-#define PRI_MIN 0	   /* Lowest priority. */
+#define PRI_MIN 0      /* Lowest priority. */
 #define PRI_DEFAULT 31 /* Default priority. */
-#define PRI_MAX 63	   /* Highest priority. */
+#define PRI_MAX 63     /* Highest priority. */
+
+#define FDT_PAGES 3
+#define FDT_COUNT_LIMIT FDT_PAGES * (1 << 9)
 
 /* A kernel thread or user process.
  *
@@ -87,28 +90,48 @@ typedef int tid_t;
  * blocked state is on a semaphore wait list. */
 struct thread
 {
-	/* Owned by thread.c. */
-	tid_t tid;				   /* Thread identifier. */
-	enum thread_status status; /* Thread state. */
-	char name[16];			   /* Name (for debugging purposes). */
-	int priority;			   /* Priority. */
-	int64_t wakeup_ticks;	   // 깨어날 tick
+    /* Owned by thread.c. */
+    tid_t tid;                 /* Thread identifier. */
+    enum thread_status status; /* Thread state. */
+    char name[16];             /* Name (for debugging purposes). */
+    int priority;              /* Priority. */
+    int64_t wakeup_ticks;      // 깨어날 tick
 
-	/* Shared between thread.c and synch.c. */
-	struct list_elem elem; /* List element. */
+    int init_priority;         //최초 priority(저장 용도)
+    struct lock *wait_on_lock; //쓰레드가 lock을 요청했는데 아직 받지 못한 lock
+    struct list donations;      //자신에게 priority를 나누어준 thread의 리스트
+    struct list_elem donation_elem;     //
+    /* Shared between thread.c and synch.c. */
+    struct list_elem elem; /* List element. */
+
+    //project 2 : system call
+    int exit_status;
+    struct file **fd_table;
+    int fd_idx;
+
+    struct intr_frame parent_if;
+    
+
+    struct list child_list;
+    struct list_elem child_elem;
+
+    
+    int next_fd;
+
+
 
 #ifdef USERPROG
-	/* Owned by userprog/process.c. */
-	uint64_t *pml4; /* Page map level 4 */
+    /* Owned by userprog/process.c. */
+    uint64_t *pml4; /* Page map level 4 */
 #endif
 #ifdef VM
-	/* Table for whole virtual memory owned by thread. */
-	struct supplemental_page_table spt;
+    /* Table for whole virtual memory owned by thread. */
+    struct supplemental_page_table spt;
 #endif
 
-	/* Owned by thread.c. */
-	struct intr_frame tf; /* Information for switching */
-	unsigned magic;		  /* Detects stack overflow. */
+    /* Owned by thread.c. */
+    struct intr_frame tf; /* Information for switching */
+    unsigned magic;       /* Detects stack overflow. */
 };
 
 /* If false (default), use round-robin scheduler.
@@ -137,9 +160,11 @@ void thread_yield(void);
 void thread_sleep(int64_t ticks);
 void thread_wakeup(int64_t global_ticks);
 bool cmp_thread_ticks(const struct list_elem *a, const struct list_elem *b, void *aux);
-
+bool cmp_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
+bool cmp_sema_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
 int thread_get_priority(void);
 void thread_set_priority(int);
+void preempt_priority(void);
 
 int thread_get_nice(void);
 void thread_set_nice(int);
@@ -149,3 +174,4 @@ int thread_get_load_avg(void);
 void do_iret(struct intr_frame *tf);
 
 #endif /* threads/thread.h */
+

@@ -1,0 +1,28 @@
+Kernel command line: -q -f put multi-recurse run 'multi-recurse 15'
+0 ~ 9fc00 1
+100000 ~ 13e0000 1
+Pintos booting with: 
+	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
+	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+Calibrating timer...  104,857,600 loops/s.
+hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
+hd1:0: detected 113 sector (56 kB) disk, model "QEMU HARDDISK", serial "QM00003"
+Formatting file system...done.
+Boot complete.
+Putting 'multi-recurse' into the file system...
+Executing 'multi-recurse 15':
+(multi-recurse) begin 15
+(multi-recurse) exec("multi-recurse 14")
+(multi-recurse) wait(exec("multi-recurse 14")) returned 4: FAILED
+multi-recurse: exit(1)
+Execution of 'multi-recurse' complete.
+Timer: 703 ticks
+Thread: 30 idle ticks, 669 kernel ticks, 5 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 87 reads, 254 writes
+hd1:0: 113 reads, 0 writes
+Console: 972 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

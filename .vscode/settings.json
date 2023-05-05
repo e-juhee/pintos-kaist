@@ -1,6 +1,16 @@
 {
     "files.associations": {
+        "*.html": "html",
         "*.c": "c",
-        "list.h": "c"
-    }
+        "list.h": "c",
+        "stdbool.h": "c",
+        "syscall-nr.h": "c",
+        "thread.h": "c",
+        "*.inc": "c",
+        "synch.h": "c",
+        "input.h": "c",
+        "main.h": "c",
+        "lib.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

@@ -1,0 +1,35 @@
+FAIL
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (wait-killed) begin
+  (child-bad) begin
+  child-bad: exit(-1)
+  (wait-killed) wait(exec()) = -1
+  (wait-killed) end
+  wait-killed: exit(0)
+Differences in `diff -u' format:
+  (wait-killed) begin
+- (child-bad) begin
+- child-bad: exit(-1)
+- (wait-killed) wait(exec()) = -1
++ (wait-killed) wait(exec()) = 4
+  (wait-killed) end
+  wait-killed: exit(0)
+Acceptable output:
+  (wait-killed) begin
+  (child-bad) begin
+  load: pintos: open failed
+  child-bad: exit(-1)
+  (wait-killed) wait(exec()) = -1
+  (wait-killed) end
+  wait-killed: exit(0)
+Differences in `diff -u' format:
+  (wait-killed) begin
+- (child-bad) begin
+- load: pintos: open failed
+- child-bad: exit(-1)
+- (wait-killed) wait(exec()) = -1
++ (wait-killed) wait(exec()) = 4
+  (wait-killed) end
+  wait-killed: exit(0)
