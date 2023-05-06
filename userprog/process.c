@@ -98,7 +98,7 @@ tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 	sema_down(&child->load_sema);
 
 	// 자식이 로드되다가 오류로 exit한 경우
-	if (child->exit_status == TID_ERROR)
+	if (child->exit_status == -2)
 	{
 		// 자식이 종료되었으므로 자식 리스트에서 제거한다.
 		// 이거 넣으면 간헐적으로 실패함 (syn-read)
@@ -217,7 +217,7 @@ __do_fork(void *aux)
 		do_iret(&if_);
 error:
 	sema_up(&current->load_sema);
-	exit(TID_ERROR);
+	exit(-2);
 }
 
 /* Switch the current execution context to the f_name.
