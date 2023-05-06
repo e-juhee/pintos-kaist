@@ -97,6 +97,18 @@ tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 	// __do_fork 함수가 실행되어 로드가 완료될 때까지 부모는 대기한다.
 	sema_down(&child->load_sema);
 
+	// 자식이 로드되다가 오류로 exit한 경우
+	if (child->exit_status == TID_ERROR)
+	{
+		// 자식이 종료되었으므로 자식 리스트에서 제거한다.
+		// 이거 넣으면 간헐적으로 실패함 (syn-read)
+		// list_remove(&child->child_elem);
+		// 자식이 완전히 종료되고 스케줄링이 이어질 수 있도록 자식에게 signal을 보낸다.
+		sema_up(&child->exit_sema);
+		// 자식 프로세스의 pid가 아닌 TID_ERROR를 반환한다.
+		return TID_ERROR;
+	}
+
 	// 자식 프로세스의 pid를 반환한다.
 	return pid;
 }
@@ -340,7 +352,7 @@ void process_exit(void)
 	// FDT의 모든 파일을 닫고 메모리를 반환한다.
 	for (int i = 2; i < FDT_COUNT_LIMIT; i++)
 		close(i);
-	palloc_free_multiple(cur->fdt, FDT_PAGES);
+	palloc_free_page(cur->fdt);
 	file_close(cur->running); // 현재 실행 중인 파일도 닫는다.
 
 	process_cleanup();
@@ -480,6 +492,11 @@ load(const char *file_name, struct intr_frame *if_)
 		goto done;
 	}
 
+	// 스레드가 삭제될 때 파일을 닫을 수 있게 구조체에 파일을 저장해둔다.
+	t->running = file;
+	// 현재 실행중인 파일은 수정할 수 없게 막는다.
+	file_deny_write(file);
+
 	/* Read and verify executable header. */
 	if (file_read(file, &ehdr, sizeof ehdr) != sizeof ehdr || memcmp(ehdr.e_ident, "\177ELF\2\1\1", 7) || ehdr.e_type != 2 || ehdr.e_machine != 0x3E // amd64
 		|| ehdr.e_version != 1 || ehdr.e_phentsize != sizeof(struct Phdr) || ehdr.e_phnum > 1024)
@@ -545,11 +562,6 @@ load(const char *file_name, struct intr_frame *if_)
 			break;
 		}
 	}
-
-	// 스레드가 삭제될 때 파일을 닫을 수 있게 구조체에 파일을 저장해둔다.
-	t->running = file;
-	// 현재 실행중인 파일은 수정할 수 없게 막는다.
-	file_deny_write(file);
 
 	/* Set up stack. */
 	if (!setup_stack(if_)) // user stack 초기화
