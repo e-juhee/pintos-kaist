@@ -357,6 +357,12 @@ void process_exit(void)
 
 	process_cleanup();
 
+	// for (struct list_elem *e = list_begin(&cur->child_list); e != list_end(&cur->child_list); e = list_next(e))
+	// {
+	// 	struct thread *child = list_entry(e, struct thread, child_elem);
+	// 	sema_up(&child->exit_sema);
+	// 	list_remove(e);
+	// }
 	// 자식이 종료될 때까지 대기하고 있는 부모에게 signal을 보낸다.
 	sema_up(&cur->wait_sema);
 	// 부모의 signal을 기다린다. 대기가 풀리고 나서 do_schedule(THREAD_DYING)이 이어져 다른 스레드가 실행된다.
@@ -492,11 +498,6 @@ load(const char *file_name, struct intr_frame *if_)
 		goto done;
 	}
 
-	// 스레드가 삭제될 때 파일을 닫을 수 있게 구조체에 파일을 저장해둔다.
-	t->running = file;
-	// 현재 실행중인 파일은 수정할 수 없게 막는다.
-	file_deny_write(file);
-
 	/* Read and verify executable header. */
 	if (file_read(file, &ehdr, sizeof ehdr) != sizeof ehdr || memcmp(ehdr.e_ident, "\177ELF\2\1\1", 7) || ehdr.e_type != 2 || ehdr.e_machine != 0x3E // amd64
 		|| ehdr.e_version != 1 || ehdr.e_phentsize != sizeof(struct Phdr) || ehdr.e_phnum > 1024)
@@ -563,6 +564,10 @@ load(const char *file_name, struct intr_frame *if_)
 		}
 	}
 
+	// 스레드가 삭제될 때 파일을 닫을 수 있게 구조체에 파일을 저장해둔다.
+	t->running = file;
+	// 현재 실행중인 파일은 수정할 수 없게 막는다.
+	file_deny_write(file);
 	/* Set up stack. */
 	if (!setup_stack(if_)) // user stack 초기화
 		goto done;
