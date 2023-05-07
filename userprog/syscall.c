@@ -263,6 +263,7 @@ int read(int fd, void *buffer, unsigned size)
 	check_address(buffer);
 	off_t read_byte = 0;
 	uint8_t *read_buffer = (char *)buffer;
+	lock_acquire(&filesys_lock);
 	if (fd == 0)
 	{
 		char key;
@@ -278,6 +279,7 @@ int read(int fd, void *buffer, unsigned size)
 	}
 	else if (fd == 1)
 	{
+		lock_release(&filesys_lock);
 		return -1;
 	}
 	else
@@ -285,12 +287,12 @@ int read(int fd, void *buffer, unsigned size)
 		struct file *read_file = process_get_file(fd);
 		if (read_file == NULL)
 		{
+			lock_release(&filesys_lock);
 			return -1;
 		}
-		lock_acquire(&filesys_lock);
 		read_byte = file_read(read_file, buffer, size);
-		lock_release(&filesys_lock);
 	}
+	lock_release(&filesys_lock);
 	return read_byte;
 }
 
@@ -302,22 +304,24 @@ int write(int fd, const void *buffer, unsigned size)
 	check_address(buffer);
 	struct file *write_file = process_get_file(fd);
 	int bytes_write;
+	lock_acquire(&filesys_lock);
 	if(fd < 2)
 	{
 		if (fd == 1)
 		{
 			putbuf(buffer, size);
 			bytes_write = size;
+			lock_release(&filesys_lock);
 			return size;
 		}
+		lock_release(&filesys_lock);
 		return -1;
 	}
 	else
 	{
-		lock_acquire(&filesys_lock);
 		bytes_write = file_write(write_file, buffer, size);
-		lock_release(&filesys_lock);
 	}
+	lock_release(&filesys_lock);
 	return bytes_write;
 }
 

@@ -4,7 +4,7 @@ Kernel command line: -q -f put sm-seq-block run sm-seq-block
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  130,867,200 loops/s.
+Calibrating timer...  107,929,600 loops/s.
 hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 107 sector (53 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -23,8 +23,8 @@ Executing 'sm-seq-block':
 (sm-seq-block) end
 sm-seq-block: exit(0)
 Execution of 'sm-seq-block' complete.
-Timer: 69 ticks
-Thread: 30 idle ticks, 31 kernel ticks, 8 user ticks
+Timer: 76 ticks
+Thread: 30 idle ticks, 39 kernel ticks, 7 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 145 reads, 289 writes
 hd1:0: 107 reads, 0 writes
