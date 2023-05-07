@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/synch.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -102,7 +103,18 @@ struct thread
 	struct list donations;
 	struct list_elem donation_elem;
 
-	struct file *fdt[128];
+	struct intr_frame parent_if;
+
+  struct list child_list;      /* 자식 프로세스 리스트 */
+  struct list_elem child_elem; /* 자식 리스트 엘리먼트 */
+  struct semaphore exit_sema;  /* exit() 함수를 호출할 때 대기하는 세마포어 */
+  struct semaphore load_sema;  /* 프로그램 메모리가 로딩될 때 대기하는 세마포어 */
+  struct semaphore wait_sema;  /* fork() 함수를 호출할 때 대기하는 세마포어 */
+  int exit_status;             /* exit() 함수가 호출될 때 반환하는 종료 status */
+	struct file *running;
+
+	// 파일 디스크립터 관련
+	struct file **fdt;
 	int next_fd;
 
 

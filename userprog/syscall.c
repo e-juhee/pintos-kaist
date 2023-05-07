@@ -11,6 +11,7 @@
 #include "filesys/file.h"
 #include "threads/synch.h"
 #include "userprog/process.h"
+#include "threads/palloc.h"
 
 
 void syscall_entry (void);
@@ -18,6 +19,9 @@ void syscall_handler (struct intr_frame *);
 void check_address(void *addr);
 void halt(void);
 void exit(int status);
+tid_t fork(const char *thread_name, struct intr_frame *f);
+int exec(const *file) ;
+int wait (tid_t tid);
 bool create (const char *file , unsigned initial_size);
 bool remove (const char *file);
 int open (const char *file);
@@ -68,26 +72,26 @@ syscall_handler (struct intr_frame *f UNUSED) {
 	switch (f->R.rax)
 	{
 	case SYS_HALT:
-		printf("halt!\n");
+		//printf("halt!\n");
 		halt();
 		break;
 	case SYS_EXIT:
 		// printf("exit!\n");
 		exit(f->R.rdi);
 		break;
-	// case SYS_FORK:
-	// 	printf("fork!\n");
-	// 	// f->R.rax = fork(f->R.rdi, f);
-	// 	break;
-	// case SYS_EXEC:
-	// 	printf("exec!\n");
-	// 	// if (exec(f->R.rdi) == -1)
-	// 	// 	exit(-1);
-	// 	break;
-	// case SYS_WAIT:
-	// 	printf("wait!\n");
-	// 	// f->R.rax = process_wait(f->R.rdi);
-	// 	break;
+	case SYS_FORK:
+		// printf("fork!\n");
+		f->R.rax = fork(f->R.rdi, f);
+		break;
+	case SYS_EXEC:
+		// printf("exec!\n");
+		if (exec(f->R.rdi) == -1)
+			exit(-1);
+		break;
+	case SYS_WAIT:
+		// printf("wait!\n");
+		f->R.rax = process_wait(f->R.rdi);
+		break;
 	case SYS_CREATE:
 		// printf("create!\n");
 		f->R.rax = create(f->R.rdi, f->R.rsi);
@@ -101,28 +105,28 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		f->R.rax = open(f->R.rdi);
 		break;
 	case SYS_FILESIZE:
-		printf("filesize!\n");
-		// f->R.rax = filesize(f->R.rdi);
+		// printf("filesize!\n");
+		f->R.rax = filesize(f->R.rdi);
 		break;
 	case SYS_READ:
-		printf("read!\n");
-		// f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
+		// printf("read!\n");
+		f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
 		break;
 	case SYS_WRITE:
-		// printf("write!\n");
+		//printf("write!\n");
 		f->R.rax = write(f->R.rdi, f->R.rsi, f->R.rdx);
 		break;
 	case SYS_SEEK:
-		printf("seek!\n");
-		// seek(f->R.rdi, f->R.rsi);
+		//printf("seek!\n");
+		seek(f->R.rdi, f->R.rsi);
 		break;
 	case SYS_TELL:
-		printf("tell!\n");
-		// f->R.rax = tell(f->R.rdi);
+		//printf("tell!\n");
+		f->R.rax = tell(f->R.rdi);
 		break;
 	case SYS_CLOSE:
-		printf("close!\n");
-		// close(f->R.rdi);
+		//printf("close!\n");
+		close(f->R.rdi);
 		break;
 	// case SYS_DUP2:
 	// 	printf("dup2!\n");
@@ -156,18 +160,39 @@ void halt(void)
 
 void exit(int status)
 {
-	/*
-	- 실행중인 스레드 구조체 가져오기
-	- 현재 프로세스 종료시키는 시스템 콜
-	- 종료 시 메시지 출력
-	출력 양식: 프로세스 이름:exit(status)
-	- 정상적으로 종료 시 status는 0
-	*/
 	struct thread *cur = thread_current (); 
 			/* 프로세스 디스크립터에 exit status 저장 */
-	printf("%s: exit(%d)\n" , cur -> name , status);
+	cur->exit_status = status;
+	printf("%s: exit(%d)\n" , cur->name , status);
 	thread_exit();
+}
 
+
+int exec(const *file) // cmd_line: 새로운 프로세스에 실행할 프로그램 명령어
+{
+	check_address(file);
+	int file_size = strlen(file) + 1;
+	char *fn_copy = palloc_get_page(PAL_ZERO);
+	if (fn_copy == NULL)
+	{
+			exit(-1);
+	}
+	strlcpy(fn_copy, file, file_size); // file 이름만 복사
+	if (process_exec(fn_copy) == -1)
+	{
+			exit(-1);
+	}
+}
+
+tid_t fork(const char *thread_name, struct intr_frame *f) {
+	return process_fork(thread_name, f);
+}
+
+
+int wait (tid_t pid)
+{
+	/* 자식 프로세스가 종료 될 때까지 대기 */
+	return process_wait(pid);
 }
 
 bool create (const char *file , unsigned initial_size)
@@ -207,7 +232,6 @@ int open (const char *file)
 	{
 		return -1;
 	}
-
 	/* 해당 파일 객체에 파일 디스크립터 부여 */ 
 	int fd = process_add_file(fileobj);
 

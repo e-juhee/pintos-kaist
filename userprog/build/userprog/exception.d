@@ -6,5 +6,6 @@ userprog/exception.o: ../../userprog/exception.c \
  ../../include/lib/kernel/stdio.h ../../include/userprog/gdt.h \
  ../../include/threads/loader.h ../../include/threads/interrupt.h \
  ../../include/threads/thread.h ../../include/lib/kernel/list.h \
- ../../include/intrinsic.h ../../include/threads/mmu.h \
- ../../include/threads/pte.h ../../include/threads/vaddr.h
+ ../../include/threads/synch.h ../../include/intrinsic.h \
+ ../../include/threads/mmu.h ../../include/threads/pte.h \
+ ../../include/threads/vaddr.h

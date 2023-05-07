@@ -3,6 +3,7 @@
         "*.c": "c",
         "list.h": "c",
         "string.h": "c",
-        "process.h": "c"
+        "process.h": "c",
+        "*.inc": "c"
     }
 }

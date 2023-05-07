@@ -123,7 +123,7 @@ void thread_init(void)
    Also creates the idle thread. */
 void thread_start(void)
 {
-	/* Create the idle thread. */
+	/* Create the idle thread. */ 
 	struct semaphore idle_started;
 	sema_init(&idle_started, 0);
 	thread_create("idle", PRI_MIN, idle, &idle_started);
@@ -217,7 +217,7 @@ tid_t thread_create(const char *name, int priority,
 	init_thread(t, name, priority);
 	tid = t->tid = allocate_tid();
 
-	/* Call the kernel_thread if it scheduled.
+	/* Call the kernel_thread if it scheduled. 커널 스레드 레지스터 초기화
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
 	t->tf.rip = (uintptr_t)kernel_thread;
 	t->tf.R.rdi = (uint64_t)function;
@@ -228,6 +228,14 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
+
+	t->fdt = palloc_get_multiple(PAL_ZERO, 3);
+	if(t->fdt == NULL)
+	{
+		return TID_ERROR;
+	}
+	/* 자식 리스트에 추가 */
+	list_push_back(&thread_current()->child_list, &t->child_elem);
 	/* Add to run queue. */
 	thread_unblock(t);
 	preempt_priority();
@@ -311,7 +319,11 @@ void thread_exit(void)
 #ifdef USERPROG
 	process_exit();
 #endif
-
+// struct thread *curr = thread_current();
+// /* 프로세스 디스크립터에 프로세스 종료를 알림 */
+// curr->terminated = true;
+// /* 부모프로세스의 대기 상태 이탈(세마포어 이용) */
+// sema_up(&(curr->exit_sema));
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
 	intr_disable();
@@ -517,6 +529,14 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->init_priority = priority;
 	t->wait_on_lock = NULL;
 	list_init(&(t->donations));
+
+	t->exit_status = 0;
+	t->next_fd = 2;
+	sema_init(&t->load_sema, 0);
+	sema_init(&t->exit_sema, 0);
+	sema_init(&t->wait_sema, 0);
+	list_init(&(t->child_list));
+
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
