@@ -339,7 +339,10 @@ void process_exit(void)
 
 	// FDT의 모든 파일을 닫고 메모리를 반환한다.
 	for (int i = 2; i < FDT_COUNT_LIMIT; i++)
-		close(i);
+	{
+		if (cur->fdt[i] != NULL)
+			close(i);
+	}
 	palloc_free_multiple(cur->fdt, FDT_PAGES);
 	file_close(cur->running); // 현재 실행 중인 파일도 닫는다.
 
@@ -731,7 +734,7 @@ int process_add_file(struct file *f)
 	// limit을 넘지 않는 범위 안에서 빈 자리 탐색
 	while (curr->next_fd < FDT_COUNT_LIMIT && fdt[curr->next_fd])
 		curr->next_fd++;
-	if (curr->next_fd == FDT_COUNT_LIMIT)
+	if (curr->next_fd >= FDT_COUNT_LIMIT)
 		return -1;
 	fdt[curr->next_fd] = f;
 
@@ -745,7 +748,7 @@ struct file *process_get_file(int fd)
 	struct file **fdt = curr->fdt;
 	/* 파일 디스크립터에 해당하는 파일 객체를 리턴 */
 	/* 없을 시 NULL 리턴 */
-	if (fd < 0 || fd > FDT_COUNT_LIMIT)
+	if (fd < 0 || fd >= FDT_COUNT_LIMIT)
 		return NULL;
 	return fdt[fd];
 }
@@ -755,7 +758,7 @@ void process_close_file(int fd)
 {
 	struct thread *curr = thread_current();
 	struct file **fdt = curr->fdt;
-	if (fd < 0 || fd > FDT_COUNT_LIMIT)
+	if (fd < 0 || fd >= FDT_COUNT_LIMIT)
 		return NULL;
 	fdt[fd] = NULL;
 }

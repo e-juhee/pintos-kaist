@@ -29,7 +29,7 @@ int write(int fd, const void *buffer, unsigned size);
 void seek(int fd, unsigned position);
 unsigned tell(int fd);
 void close(int fd);
-int fork(const char *thread_name, struct intr_frame *f);
+tid_t fork(const char *thread_name, struct intr_frame *f);
 int exec(const char *cmd_line);
 int wait(int pid);
 
@@ -158,7 +158,6 @@ int open(const char *file_name)
 	int fd = process_add_file(file);
 	if (fd == -1)
 		file_close(file);
-
 	return fd;
 }
 
@@ -173,6 +172,7 @@ int filesize(int fd)
 int read(int fd, void *buffer, unsigned size)
 {
 	check_address(buffer);
+	lock_acquire(&filesys_lock);
 
 	char *ptr = (char *)buffer;
 	int bytes_read = 0;
@@ -188,15 +188,21 @@ int read(int fd, void *buffer, unsigned size)
 			ptr++;
 			bytes_read++;
 		}
+		lock_release(&filesys_lock);
 	}
 	else
 	{
 		if (fd < 2)
+		{
+			lock_release(&filesys_lock);
 			return -1;
+		}
 		struct file *file = process_get_file(fd);
 		if (file == NULL)
+		{
+			lock_release(&filesys_lock);
 			return -1;
-		lock_acquire(&filesys_lock);
+		}
 		bytes_read = file_read(file, buffer, size);
 		lock_release(&filesys_lock);
 	}
@@ -206,20 +212,27 @@ int read(int fd, void *buffer, unsigned size)
 int write(int fd, const void *buffer, unsigned size)
 {
 	check_address(buffer);
+	lock_acquire(&filesys_lock);
 	int bytes_write = 0;
 	if (fd == STDOUT_FILENO)
 	{
 		putbuf(buffer, size);
 		bytes_write = size;
+		lock_release(&filesys_lock);
 	}
 	else
 	{
 		if (fd < 2)
+		{
+			lock_release(&filesys_lock);
 			return -1;
+		}
 		struct file *file = process_get_file(fd);
 		if (file == NULL)
+		{
+			lock_release(&filesys_lock);
 			return -1;
-		lock_acquire(&filesys_lock);
+		}
 		bytes_write = file_write(file, buffer, size);
 		lock_release(&filesys_lock);
 	}
@@ -257,7 +270,7 @@ void close(int fd)
 	process_close_file(fd);
 }
 
-int fork(const char *thread_name, struct intr_frame *f)
+tid_t fork(const char *thread_name, struct intr_frame *f)
 {
 	return process_fork(thread_name, f);
 }
