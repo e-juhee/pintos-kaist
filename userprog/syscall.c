@@ -200,11 +200,7 @@ int read(int fd, void *buffer, unsigned size)
 	{
 		for (int i = 0; i < size; i++)
 		{
-			// char ch = input_getc();
-			// if (ch == '\n')
-			// 	break;
 			*ptr++ = input_getc();
-			// ptr++;
 			bytes_read++;
 		}
 	}
