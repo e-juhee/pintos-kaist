@@ -172,7 +172,6 @@ int filesize(int fd)
 int read(int fd, void *buffer, unsigned size)
 {
 	check_address(buffer);
-	lock_acquire(&filesys_lock);
 
 	char *ptr = (char *)buffer;
 	int bytes_read = 0;
@@ -188,21 +187,19 @@ int read(int fd, void *buffer, unsigned size)
 			ptr++;
 			bytes_read++;
 		}
-		lock_release(&filesys_lock);
 	}
 	else
 	{
 		if (fd < 2)
 		{
-			lock_release(&filesys_lock);
 			return -1;
 		}
 		struct file *file = process_get_file(fd);
 		if (file == NULL)
 		{
-			lock_release(&filesys_lock);
 			return -1;
 		}
+		lock_acquire(&filesys_lock);
 		bytes_read = file_read(file, buffer, size);
 		lock_release(&filesys_lock);
 	}
@@ -212,27 +209,24 @@ int read(int fd, void *buffer, unsigned size)
 int write(int fd, const void *buffer, unsigned size)
 {
 	check_address(buffer);
-	lock_acquire(&filesys_lock);
 	int bytes_write = 0;
 	if (fd == STDOUT_FILENO)
 	{
 		putbuf(buffer, size);
 		bytes_write = size;
-		lock_release(&filesys_lock);
 	}
 	else
 	{
 		if (fd < 2)
 		{
-			lock_release(&filesys_lock);
 			return -1;
 		}
 		struct file *file = process_get_file(fd);
 		if (file == NULL)
 		{
-			lock_release(&filesys_lock);
 			return -1;
 		}
+		lock_acquire(&filesys_lock);
 		bytes_write = file_write(file, buffer, size);
 		lock_release(&filesys_lock);
 	}
