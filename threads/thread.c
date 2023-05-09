@@ -115,25 +115,24 @@ bool less_func(const struct list_elem *a,
 
 void thread_wakeup(int64_t curr_ticks)
 {
-    struct list_elem *curr_elem = list_begin(&sleep_list);
     enum intr_level old_level;
-    old_level = intr_disable ();
-    while(curr_elem != list_end(&sleep_list))
-    {
-        struct thread *curr_thread = list_entry(curr_elem, struct thread, elem);
-        int64_t wakeup_ticks = curr_thread->wakeup_ticks;
-        if (curr_ticks >= wakeup_ticks){
-            list_remove(curr_elem);
-            thread_unblock(curr_thread);
-            break;
-        }
+	old_level = intr_disable(); // 인터럽트 비활성
 
-        else{
-                curr_elem = list_next(curr_elem);
-                 
-            }
-    }
-    intr_set_level (old_level);
+	struct list_elem *curr_elem = list_begin(&sleep_list); // sleep_list의 첫번째 요소(빈 경우 NULL)
+	while (curr_elem != list_end(&sleep_list))
+	{
+		struct thread *curr_thread = list_entry(curr_elem, struct thread, elem); // 현재 검사중인 elem의 스레드
+
+		if (curr_ticks >= curr_thread->wakeup_ticks) // 깰 시간이 됐으면
+		{
+			curr_elem = list_remove(curr_elem); // sleep_list에서 제거 & curr_elem에는 다음 elem이 담김
+			thread_unblock(curr_thread);		// ready_list로 이동
+			preempt_priority();
+		}
+		else
+			break;
+	}
+	intr_set_level(old_level); // 인터럽트 상태를 원래 상태로 변경
 }
 
 
@@ -239,7 +238,7 @@ thread_create (const char *name, int priority,
     /* Initialize thread. */
     init_thread(t, name, priority);
     tid = t->tid = allocate_tid();
-
+    
     /* Call the kernel_thread if it scheduled.
      * Note) rdi is 1st argument, and rsi is 2nd argument. */
     t->tf.rip = (uintptr_t)kernel_thread;
@@ -250,7 +249,7 @@ thread_create (const char *name, int priority,
     t->tf.ss = SEL_KDSEG;
     t->tf.cs = SEL_KCSEG;
     t->tf.eflags = FLAG_IF;
-
+    list_push_back(&thread_current()->child_list, &t->child_elem);
     t->fd_table = palloc_get_multiple(PAL_ZERO, FDT_PAGES);
 	if (t->fd_table == NULL)
 		return TID_ERROR;
@@ -285,13 +284,16 @@ void thread_sleep(int64_t tick)
 
 void preempt_priority(void)
 {
-    struct thread *curr = thread_current();
-    if (!list_empty (&ready_list) && 
-    curr->priority < 
-    list_entry (list_front (&ready_list), struct thread, elem)->priority) {
-        thread_yield();
+    if (thread_current() == idle_thread)
+		return;
+	if (list_empty(&ready_list))
+		return;
+	struct thread *curr = thread_current();
+	struct thread *ready = list_entry(list_front(&ready_list), struct thread, elem);
+	if (curr->priority < ready->priority) // ready_list에 현재 실행중인 스레드보다 우선순위가 높은 스레드가 있으면
+		thread_yield();
     }
-}
+
 void thread_block(void)
 {
     ASSERT(!intr_context());
@@ -520,7 +522,10 @@ init_thread(struct thread *t, const char *name, int priority)
     t->init_priority = priority;
     t->wait_on_lock = NULL;
     list_init(&t->donations);
-
+    list_init(&(t->child_list));
+    sema_init(&t->load_sema, 0);
+    sema_init(&t->exit_sema, 0);
+    sema_init(&t->wait_sema, 0);
     t->exit_status = 0;
 	t->next_fd = 2;
 }

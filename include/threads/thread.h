@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/synch.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -107,14 +108,18 @@ struct thread
     //project 2 : system call
     int exit_status;
     struct file **fd_table;
-    int fd_idx;
 
-    struct intr_frame parent_if;
+
+    struct intr_frame parent_if;    //부모 쓰레드 if
     
 
     struct list child_list;
     struct list_elem child_elem;
+    struct semaphore load_sema;
+    struct semaphore exit_sema;
+    struct semaphore wait_sema;
 
+    struct file *running; // 현재 스레드의 실행중인 파일
     
     int next_fd;
 

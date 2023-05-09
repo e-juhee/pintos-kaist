@@ -4,7 +4,7 @@ Kernel command line: -q -f put close-bad-fd run close-bad-fd
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  105,062,400 loops/s.
+Calibrating timer...  130,867,200 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -16,12 +16,12 @@ Executing 'close-bad-fd':
 (close-bad-fd) end
 close-bad-fd: exit(0)
 Execution of 'close-bad-fd' complete.
-Timer: 672 ticks
-Thread: 30 idle ticks, 640 kernel ticks, 2 user ticks
+Timer: 66 ticks
+Thread: 30 idle ticks, 34 kernel ticks, 2 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 866 characters output
+Console: 864 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...

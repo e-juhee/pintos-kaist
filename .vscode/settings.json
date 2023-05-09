@@ -10,7 +10,9 @@
         "synch.h": "c",
         "input.h": "c",
         "main.h": "c",
-        "lib.h": "c"
+        "lib.h": "c",
+        "stdio.h": "c",
+        "loader.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

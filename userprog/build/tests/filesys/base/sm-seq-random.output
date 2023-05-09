@@ -4,7 +4,7 @@ Kernel command line: -q -f put sm-seq-random run sm-seq-random
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  104,857,600 loops/s.
+Calibrating timer...  157,081,600 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 107 sector (53 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -23,12 +23,12 @@ Executing 'sm-seq-random':
 (sm-seq-random) end
 sm-seq-random: exit(0)
 Execution of 'sm-seq-random' complete.
-Timer: 711 ticks
-Thread: 30 idle ticks, 667 kernel ticks, 14 user ticks
+Timer: 68 ticks
+Thread: 30 idle ticks, 30 kernel ticks, 8 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 140 reads, 287 writes
 hd1:0: 107 reads, 0 writes
-Console: 1126 characters output
+Console: 1123 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...

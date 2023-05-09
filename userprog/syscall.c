@@ -13,7 +13,23 @@
 #include "threads/synch.h"
 #include "devices/input.h"
 #include "lib/kernel/stdio.h"
+#include "threads/palloc.h"
 
+
+void check_address(void *addr);
+void halt(void);
+void exit(int status);
+bool create(const char *file , unsigned initial_size);
+bool remove (const char *file);
+int open(const char *file);
+int filesize(int fd);
+void seek(int fd, unsigned position);
+unsigned tell(int fd);
+void close(int fd);
+int read (int fd, void *buffer, unsigned size);
+int write(int fd, const void *buffer, unsigned size);
+int fork(const char *thread_name, struct intr_frame *f);
+int wait(int pid);
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 void check_address(void *addr);
@@ -59,13 +75,15 @@ syscall_handler (struct intr_frame *f UNUSED) {
 	case SYS_EXIT:
 		exit(f->R.rdi);
 		break;
-	// case SYS_FORK:
-	// 	f->R.rax = fork(f->R.rdi);
-	// case SYS_EXEC:
-	// 	f->R.rax = exec(f->R.rdi);
-	// 	break;
-	// case SYS_WAIT:
-	// 	f->R.rax = wait(f->R.rdi);
+	case SYS_FORK:
+		f->R.rax = fork(f->R.rdi, f);
+		break;
+	case SYS_EXEC:
+		f->R.rax = exec(f->R.rdi);
+		break;
+	case SYS_WAIT:
+		f->R.rax = wait(f->R.rdi);
+		break;
 	case SYS_CREATE:
 		f->R.rax = create(f->R.rdi, f->R.rsi);
 		break;
@@ -132,10 +150,6 @@ bool remove (const char *file)
 	return filesys_remove(file);
 }
 
-// pid_t exec(const *cmd_line)
-// {
-
-// }
 
 int open(const char *file)
 {
@@ -198,55 +212,90 @@ void close (int fd) {
 int read(int fd, void *buffer, unsigned size)
 {
 	check_address(buffer);
-
-	char *ptr = (char *)buffer;
-	int bytes_read = 0;
-
-	if (fd == 0)
+	off_t read_byte = 0;
+	uint8_t *read_buffer = (char *)buffer;
+	lock_acquire(&filesys_lock);
+	if (fd == NULL)
 	{
-		for (int i = 0; i < size; i++)
+		char key;
+		for (read_byte = 0; read_byte < size; read_byte++)
 		{
-			char ch = input_getc();
-			if (ch == '\n')
+			key = input_getc(); // 키보드에 한 문자 입력받기
+			*read_buffer++ = key; // read_buffer에 받은 문자 저장
+			if (key == '\n')
+			{
 				break;
-			*ptr = ch;
-			ptr++;
-			bytes_read++;
+			}
 		}
+	}
+	else if (fd == 1)
+	{
+		lock_release(&filesys_lock);
+		return -1;
 	}
 	else
 	{
-		if (fd < 2)
+		struct file *read_file = process_get_file(fd);
+		if (read_file == NULL)
+		{
+			lock_release(&filesys_lock);
 			return -1;
-		struct file *file = process_get_file(fd);
-		if (file == NULL)
-			return -1;
-		lock_acquire(&filesys_lock);
-		bytes_read = file_read(file, buffer, size);
-		lock_release(&filesys_lock);
+		}
+		read_byte = file_read(read_file, buffer, size);
 	}
-	return bytes_read;
+	lock_release(&filesys_lock);
+	return read_byte;
 }
 
 int write(int fd, const void *buffer, unsigned size)
 {
 	check_address(buffer);
+	lock_acquire(&filesys_lock);
 	int bytes_write = 0;
 	if (fd == 1)
 	{
 		putbuf(buffer, size);
 		bytes_write = size;
+		lock_release(&filesys_lock);
 	}
 	else
 	{
 		if (fd < 2)
+		{
+			lock_release(&filesys_lock);
 			return -1;
+		}
 		struct file *file = process_get_file(fd);
 		if (file == NULL)
+		{	lock_release(&filesys_lock);
 			return -1;
-		lock_acquire(&filesys_lock);
+		}
+		
 		bytes_write = file_write(file, buffer, size);
 		lock_release(&filesys_lock);
 	}
 	return bytes_write;
+}
+
+int fork(const char *thread_name, struct intr_frame *f)
+{
+	return process_fork(thread_name, f);
+}
+
+int wait(int pid)
+{
+	return process_wait(pid);
+}
+
+int exec(const char *cmd_line)
+{
+	check_address(cmd_line);
+	char *cmd_line_copy;
+	cmd_line_copy = palloc_get_page(0);
+	if (cmd_line_copy ==NULL)
+		exit(-1);
+	strlcpy(cmd_line_copy, cmd_line, PGSIZE);
+
+	if (process_exec(cmd_line_copy) == -1)
+	exit(-1);
 }

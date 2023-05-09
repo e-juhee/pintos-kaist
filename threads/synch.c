@@ -118,9 +118,10 @@ void sema_up(struct semaphore *sema)
                                   struct thread, elem));
         }
     sema->value++;
+    preempt_priority();
     intr_set_level(old_level);
 
-    preempt_priority();
+  
 }
 
 static void sema_test_helper(void *sema_);
@@ -395,17 +396,19 @@ void remove_donor(struct lock *lock){
   }
 }
 void update_priority_by_donations(void){
-  struct thread *cur = thread_current ();
+ 
+	struct thread *curr = thread_current();
+	struct list *donations = &(thread_current()->donations);
+	struct thread *donations_root;
 
-  cur->priority = cur->init_priority;
-  
-  if (!list_empty (&cur->donations)) {
-    list_sort (&cur->donations, cmp_donation_priority, 0);
+	if (list_empty(donations)) // donors가 없으면 (donor가 하나였던 경우)
+	{
+		curr->priority = curr->init_priority; // 최초의 priority로 변경
+		return;
+	}
 
-    struct thread *front = list_entry (list_front (&cur->donations), struct thread, donation_elem);
-    if (front->priority > cur->priority)
-      cur->priority = front->priority;
-  }
+	donations_root = list_entry(list_front(donations), struct thread, donation_elem);
+	curr->priority = donations_root->priority;
     }
 
 

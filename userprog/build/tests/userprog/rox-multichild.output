@@ -4,7 +4,7 @@ Kernel command line: -q -f put rox-multichild put child-rox run rox-multichild
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  104,857,600 loops/s.
+Calibrating timer...  130,867,200 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 220 sector (110 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -18,15 +18,45 @@ Executing 'rox-multichild':
 (rox-multichild) read "child-rox"
 (rox-multichild) write "child-rox"
 (rox-multichild) exec "child-rox 5"
-(rox-multichild) wait for child: FAILED
-rox-multichild: exit(1)
+(child-rox) begin
+(child-rox) try to write "child-rox"
+(child-rox) exec "child-rox 4"
+(child-rox) begin
+(child-rox) try to write "child-rox"
+(child-rox) exec "child-rox 3"
+(child-rox) begin
+(child-rox) try to write "child-rox"
+(child-rox) exec "child-rox 2"
+(child-rox) begin
+(child-rox) try to write "child-rox"
+(child-rox) exec "child-rox 1"
+(child-rox) begin
+(child-rox) try to write "child-rox"
+(child-rox) try to write "child-rox"
+(child-rox) end
+child-rox: exit(12)
+(child-rox) try to write "child-rox"
+(child-rox) end
+child-rox: exit(12)
+(child-rox) try to write "child-rox"
+(child-rox) end
+child-rox: exit(12)
+(child-rox) try to write "child-rox"
+(child-rox) end
+child-rox: exit(12)
+(child-rox) try to write "child-rox"
+(child-rox) end
+child-rox: exit(12)
+(rox-multichild) write "child-rox"
+(rox-multichild) end
+rox-multichild: exit(0)
 Execution of 'rox-multichild' complete.
-Timer: 708 ticks
-Thread: 30 idle ticks, 670 kernel ticks, 8 user ticks
+Timer: 97 ticks
+Thread: 30 idle ticks, 40 kernel ticks, 28 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 114 reads, 479 writes
+hd0:1: 420 reads, 480 writes
 hd1:0: 220 reads, 0 writes
-Console: 1100 characters output
+Console: 1879 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...

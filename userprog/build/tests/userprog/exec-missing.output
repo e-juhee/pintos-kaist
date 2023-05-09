@@ -4,7 +4,7 @@ Kernel command line: -q -f put exec-missing run exec-missing
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  104,857,600 loops/s.
+Calibrating timer...  130,867,200 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 103 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -13,16 +13,15 @@ Boot complete.
 Putting 'exec-missing' into the file system...
 Executing 'exec-missing':
 (exec-missing) begin
-(exec-missing) exec("no-such-file"): 3
-(exec-missing) end
-exec-missing: exit(0)
+load: no-such-file: open failed
+exec-missing: exit(-1)
 Execution of 'exec-missing' complete.
-Timer: 711 ticks
-Thread: 30 idle ticks, 676 kernel ticks, 5 user ticks
+Timer: 64 ticks
+Thread: 30 idle ticks, 32 kernel ticks, 2 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 80 reads, 234 writes
+hd0:1: 97 reads, 234 writes
 hd1:0: 103 reads, 0 writes
-Console: 905 characters output
+Console: 878 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
