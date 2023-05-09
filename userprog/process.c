@@ -97,6 +97,18 @@ tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 	// __do_fork 함수가 실행되어 로드가 완료될 때까지 부모는 대기한다.
 	sema_down(&child->load_sema);
 
+	// 자식이 로드되다가 오류로 exit한 경우
+	if (child->exit_status == -2)
+	{
+		// 자식이 종료되었으므로 자식 리스트에서 제거한다.
+		// 이거 넣으면 간헐적으로 실패함 (syn-read)
+		// list_remove(&child->child_elem);
+		// 자식이 완전히 종료되고 스케줄링이 이어질 수 있도록 자식에게 signal을 보낸다.
+		sema_up(&child->exit_sema);
+		// 자식 프로세스의 pid가 아닌 TID_ERROR를 반환한다.
+		return TID_ERROR;
+	}
+
 	// 자식 프로세스의 pid를 반환한다.
 	return pid;
 }
@@ -205,7 +217,7 @@ __do_fork(void *aux)
 		do_iret(&if_);
 error:
 	sema_up(&current->load_sema);
-	exit(TID_ERROR);
+	exit(-2);
 }
 
 /* Switch the current execution context to the f_name.
@@ -348,6 +360,12 @@ void process_exit(void)
 
 	process_cleanup();
 
+	// for (struct list_elem *e = list_begin(&cur->child_list); e != list_end(&cur->child_list); e = list_next(e))
+	// {
+	// 	struct thread *child = list_entry(e, struct thread, child_elem);
+	// 	sema_up(&child->exit_sema);
+	// 	list_remove(e);
+	// }
 	// 자식이 종료될 때까지 대기하고 있는 부모에게 signal을 보낸다.
 	sema_up(&cur->wait_sema);
 	// 부모의 signal을 기다린다. 대기가 풀리고 나서 do_schedule(THREAD_DYING)이 이어져 다른 스레드가 실행된다.
@@ -553,7 +571,6 @@ load(const char *file_name, struct intr_frame *if_)
 	t->running = file;
 	// 현재 실행중인 파일은 수정할 수 없게 막는다.
 	file_deny_write(file);
-
 	/* Set up stack. */
 	if (!setup_stack(if_)) // user stack 초기화
 		goto done;

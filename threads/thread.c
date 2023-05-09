@@ -207,7 +207,7 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
 	// 현재 스레드의 자식으로 추가
 	list_push_back(&thread_current()->child_list, &t->child_elem);
 
-	t->fdt = palloc_get_multiple(PAL_ZERO, FDT_PAGES);
+	t->fdt = palloc_get_page(PAL_ZERO);
 	if (t->fdt == NULL)
 		return TID_ERROR;
 	/* Add to run queue. */
