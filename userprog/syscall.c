@@ -68,8 +68,8 @@ syscall_handler (struct intr_frame *f UNUSED) {
 
 	char *fn_copy;
 	int siz;
-	
-	switch (f->R.rax)
+	int a = f->R.rax;
+	switch (a)
 	{
 	case SYS_HALT:
 		//printf("halt!\n");

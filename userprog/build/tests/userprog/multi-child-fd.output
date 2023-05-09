@@ -4,7 +4,7 @@ Kernel command line: -q -f put multi-child-fd put sample.txt put child-close run
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  70,348,800 loops/s.
+Calibrating timer...  68,710,400 loops/s.
 hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 220 sector (110 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -25,8 +25,8 @@ child-close: exit(0)
 (multi-child-fd) end
 multi-child-fd: exit(0)
 Execution of 'multi-child-fd' complete.
-Timer: 79 ticks
-Thread: 30 idle ticks, 43 kernel ticks, 6 user ticks
+Timer: 73 ticks
+Thread: 30 idle ticks, 39 kernel ticks, 5 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 204 reads, 488 writes
 hd1:0: 220 reads, 0 writes

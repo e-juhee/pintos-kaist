@@ -50,7 +50,7 @@ test_main (void)
 
     char magic_sentence[17] = "pintos is funny!";
     memcpy(buffer, magic_sentence, 17);
-
+  
     msg ("Child: %s", buffer);
     close(handle);
   }

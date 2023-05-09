@@ -4,7 +4,7 @@ Kernel command line: -q -f put exec-boundary put child-simple run exec-boundary
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  25,779,200 loops/s.
+Calibrating timer...  58,880,000 loops/s.
 hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 207 sector (103 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -21,8 +21,8 @@ child-simple: exit(81)
 (exec-boundary) end
 exec-boundary: exit(0)
 Execution of 'exec-boundary' complete.
-Timer: 72 ticks
-Thread: 30 idle ticks, 38 kernel ticks, 4 user ticks
+Timer: 70 ticks
+Thread: 31 idle ticks, 35 kernel ticks, 4 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 159 reads, 452 writes
 hd1:0: 207 reads, 0 writes

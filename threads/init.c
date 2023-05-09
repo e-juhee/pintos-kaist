@@ -55,7 +55,7 @@ static void bss_init (void);
 static void paging_init (uint64_t mem_end);
 
 static char **read_command_line (void);
-static char **parse_options (char **argv);
+static char **parse_options (char **argv); //옵션을 파싱하고, 파싱된 옵션에 따라 특정 작업을 수행
 static void run_actions (char **argv);
 static void usage (void);
 
@@ -242,7 +242,7 @@ run_task (char **argv) {
 	printf ("Executing '%s':\n", task);
 #ifdef USERPROG
 	if (thread_tests){
-		run_test (task);
+		run_test (task); // 스레드 관련 테스트가 아니기 때문에 else로
 	} else {
 		process_wait (process_create_initd (task));
 	}

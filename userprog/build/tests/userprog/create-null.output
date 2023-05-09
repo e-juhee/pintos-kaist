@@ -4,7 +4,7 @@ Kernel command line: -q -f put create-null run create-null
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  106,291,200 loops/s.
+Calibrating timer...  71,987,200 loops/s.
 hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -15,12 +15,12 @@ Executing 'create-null':
 (create-null) begin
 create-null: exit(-1)
 Execution of 'create-null' complete.
-Timer: 69 ticks
-Thread: 30 idle ticks, 37 kernel ticks, 2 user ticks
+Timer: 61 ticks
+Thread: 30 idle ticks, 29 kernel ticks, 2 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 839 characters output
+Console: 838 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...

@@ -4,7 +4,7 @@ Kernel command line: -q -f put multi-oom run multi-oom
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  106,291,200 loops/s.
+Calibrating timer...  94,924,800 loops/s.
 hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 107 sector (53 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -3780,12 +3780,12 @@ child_0_O: exit(174)
 (multi-oom) end
 multi-oom: exit(0)
 Execution of 'multi-oom' complete.
-Timer: 5380 ticks
-Thread: 30 idle ticks, 910 kernel ticks, 4440 user ticks
+Timer: 5403 ticks
+Thread: 30 idle ticks, 881 kernel ticks, 4492 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 10339 reads, 242 writes
 hd1:0: 107 reads, 0 writes
-Console: 83332 characters output
+Console: 83331 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
