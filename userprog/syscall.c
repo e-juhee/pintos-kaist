@@ -196,6 +196,7 @@ int read(int fd, void *buffer, unsigned size)
 	char *ptr = (char *)buffer;
 	int bytes_read = 0;
 
+	lock_acquire(&filesys_lock);
 	if (fd == STDIN_FILENO)
 	{
 		for (int i = 0; i < size; i++)
@@ -203,15 +204,23 @@ int read(int fd, void *buffer, unsigned size)
 			*ptr++ = input_getc();
 			bytes_read++;
 		}
+		lock_release(&filesys_lock);
 	}
 	else
 	{
 		if (fd < 2)
+		{
+
+			lock_release(&filesys_lock);
 			return -1;
+		}
 		struct file *file = process_get_file(fd);
 		if (file == NULL)
+		{
+
+			lock_release(&filesys_lock);
 			return -1;
-		lock_acquire(&filesys_lock);
+		}
 		bytes_read = file_read(file, buffer, size);
 		lock_release(&filesys_lock);
 	}
