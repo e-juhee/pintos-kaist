@@ -119,8 +119,8 @@ void sema_up(struct semaphore *sema)
 		thread_unblock(list_entry(list_pop_front(&sema->waiters), struct thread, elem));
 	}
 	sema->value++;
-	intr_set_level(old_level);
 	preempt_priority(); // unblock이 호출되며 ready_list가 수정되었으므로 선점 여부 확인
+	intr_set_level(old_level);
 }
 
 static void sema_test_helper(void *sema_);

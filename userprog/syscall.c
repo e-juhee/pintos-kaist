@@ -29,7 +29,7 @@ int write(int fd, const void *buffer, unsigned size);
 void seek(int fd, unsigned position);
 unsigned tell(int fd);
 void close(int fd);
-int fork(const char *thread_name, struct intr_frame *f);
+tid_t fork(const char *thread_name, struct intr_frame *f);
 int exec(const char *cmd_line);
 int wait(int pid);
 
@@ -63,7 +63,6 @@ void syscall_init(void)
 /* The main system call interface */
 void syscall_handler(struct intr_frame *f UNUSED)
 {
-	// TODO: Your implementation goes here.
 	int syscall_n = f->R.rax; /* 시스템 콜 넘버 */
 	switch (syscall_n)
 	{
@@ -115,10 +114,8 @@ void check_address(void *addr)
 {
 	if (addr == NULL)
 		exit(-1);
-
-	if (!is_user_vaddr(addr)) // 유저 영역이 아니거나 NULL이면 프로세스 종료
+	if (!is_user_vaddr(addr))
 		exit(-1);
-
 	if (pml4_get_page(thread_current()->pml4, addr) == NULL)
 		exit(-1);
 }
@@ -154,11 +151,9 @@ int open(const char *file_name)
 	struct file *file = filesys_open(file_name);
 	if (file == NULL)
 		return -1;
-
 	int fd = process_add_file(file);
 	if (fd == -1)
 		file_close(file);
-
 	return fd;
 }
 
@@ -170,6 +165,30 @@ int filesize(int fd)
 	return file_length(file);
 }
 
+void seek(int fd, unsigned position)
+{
+	struct file *file = process_get_file(fd);
+	if (file == NULL)
+		return;
+	file_seek(file, position);
+}
+
+unsigned tell(int fd)
+{
+	struct file *file = process_get_file(fd);
+	if (file == NULL)
+		return;
+	return file_tell(file);
+}
+
+void close(int fd)
+{
+	struct file *file = process_get_file(fd);
+	if (file == NULL)
+		return;
+	file_close(file);
+	process_close_file(fd);
+}
 int read(int fd, void *buffer, unsigned size)
 {
 	check_address(buffer);
@@ -177,26 +196,31 @@ int read(int fd, void *buffer, unsigned size)
 	char *ptr = (char *)buffer;
 	int bytes_read = 0;
 
+	lock_acquire(&filesys_lock);
 	if (fd == STDIN_FILENO)
 	{
 		for (int i = 0; i < size; i++)
 		{
-			char ch = input_getc();
-			if (ch == '\n')
-				break;
-			*ptr = ch;
-			ptr++;
+			*ptr++ = input_getc();
 			bytes_read++;
 		}
+		lock_release(&filesys_lock);
 	}
 	else
 	{
 		if (fd < 2)
+		{
+
+			lock_release(&filesys_lock);
 			return -1;
+		}
 		struct file *file = process_get_file(fd);
 		if (file == NULL)
+		{
+
+			lock_release(&filesys_lock);
 			return -1;
-		lock_acquire(&filesys_lock);
+		}
 		bytes_read = file_read(file, buffer, size);
 		lock_release(&filesys_lock);
 	}
@@ -226,38 +250,7 @@ int write(int fd, const void *buffer, unsigned size)
 	return bytes_write;
 }
 
-void seek(int fd, unsigned position)
-{
-	if (fd < 2)
-		return;
-	struct file *file = process_get_file(fd);
-	if (file == NULL)
-		return;
-	file_seek(file, position);
-}
-
-unsigned tell(int fd)
-{
-	if (fd < 2)
-		return;
-	struct file *file = process_get_file(fd);
-	if (file == NULL)
-		return;
-	return file_tell(file);
-}
-
-void close(int fd)
-{
-	if (fd < 2)
-		return;
-	struct file *file = process_get_file(fd);
-	if (file == NULL)
-		return;
-	file_close(file);
-	process_close_file(fd);
-}
-
-int fork(const char *thread_name, struct intr_frame *f)
+tid_t fork(const char *thread_name, struct intr_frame *f)
 {
 	return process_fork(thread_name, f);
 }
