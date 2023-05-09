@@ -204,6 +204,12 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
+	// 현재 스레드의 자식으로 추가
+	list_push_back(&thread_current()->child_list, &t->child_elem);
+
+	t->fdt = palloc_get_page(PAL_ZERO);
+	if (t->fdt == NULL)
+		return TID_ERROR;
 	/* Add to run queue. */
 	thread_unblock(t);
 	preempt_priority();
@@ -497,6 +503,10 @@ init_thread(struct thread *t, const char *name, int priority)
 
 	t->exit_status = 0;
 	t->next_fd = 2;
+	sema_init(&t->load_sema, 0);
+	sema_init(&t->exit_sema, 0);
+	sema_init(&t->wait_sema, 0);
+	list_init(&(t->child_list));
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
