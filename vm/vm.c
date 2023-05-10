@@ -226,7 +226,7 @@ bool page_less(const struct hash_elem *a_,
 /* Initialize new supplemental page table */
 void supplemental_page_table_init(struct supplemental_page_table *spt UNUSED)
 {
-	hash_init(&thread_current()->spt, page_hash, page_less, NULL);
+	hash_init(spt, page_hash, page_less, NULL);
 }
 
 /* Copy supplemental page table from src to dst */
