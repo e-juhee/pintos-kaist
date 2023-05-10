@@ -47,9 +47,9 @@ struct page
 	const struct page_operations *operations;
 	void *va;			 /* Address in terms of user space */
 	struct frame *frame; /* Back reference for frame */
-	struct hash_elem hash_elem;
 
 	/* Your implementation */
+	struct hash_elem hash_elem;
 
 	/* Per-type data are binded into the union.
 	 * Each function automatically detects the current union */
