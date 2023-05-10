@@ -2,9 +2,9 @@
 
 #include "threads/malloc.h"
 #include "threads/thread.h"
+#include "threads/mmu.h"
 #include "vm/vm.h"
 #include "vm/inspect.h"
-#include "hash.h"
 
 /* Initializes the virtual memory subsystem by invoking each subsystem's
  * intialize codes. */
@@ -76,8 +76,9 @@ spt_find_page(struct supplemental_page_table *spt UNUSED, void *va UNUSED)
 	struct hash_elem *e;
 
 	// va에 해당하는 hash_elem 찾기
-	page->va = va;
-	e = hash_find(&spt, &page->hash_elem);
+	page->va = pg_round_down(va); // page의 시작 주소 할당
+	e = hash_find(&spt->spt_hash, &page->hash_elem);
+	free(page);
 
 	// 있으면 e에 해당하는 페이지 반환
 	return e != NULL ? hash_entry(e, struct page, hash_elem) : NULL;
@@ -88,7 +89,7 @@ bool spt_insert_page(struct supplemental_page_table *spt UNUSED,
 					 struct page *page UNUSED)
 {
 	/* TODO: Fill this function. */
-	return hash_insert(&spt, &page->hash_elem) == NULL ? true : false; // 존재하지 않을 경우에만 삽입
+	return hash_insert(&spt->spt_hash, &page->hash_elem) == NULL ? true : false; // 존재하지 않을 경우에만 삽입
 }
 
 void spt_remove_page(struct supplemental_page_table *spt, struct page *page)
@@ -181,6 +182,8 @@ bool vm_claim_page(void *va UNUSED)
 	/* TODO: Fill this function */
 	// spt에서 va에 해당하는 page 찾기
 	page = spt_find_page(&thread_current()->spt, va);
+	if (page == NULL)
+		return false;
 	return vm_do_claim_page(page);
 }
 
@@ -196,8 +199,9 @@ vm_do_claim_page(struct page *page)
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
 	// 가상 주소와 물리 주소를 매핑
-	bool writable = is_writable(page->va);
-	pml4_set_page(&thread_current()->pml4, page->va, frame->kva, writable);
+	struct thread *current = thread_current();
+	bool writable = is_writable(current->pml4); // 🚨 Todo
+	pml4_set_page(current->pml4, page->va, frame->kva, writable);
 
 	return swap_in(page, frame->kva);
 }
@@ -223,7 +227,7 @@ bool page_less(const struct hash_elem *a_,
 /* Initialize new supplemental page table */
 void supplemental_page_table_init(struct supplemental_page_table *spt UNUSED)
 {
-	hash_init(spt, page_hash, page_less, NULL);
+	hash_init(&spt->spt_hash, page_hash, page_less, NULL);
 }
 
 /* Copy supplemental page table from src to dst */
