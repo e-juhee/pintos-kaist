@@ -72,6 +72,7 @@ spt_find_page(struct supplemental_page_table *spt UNUSED, void *va UNUSED)
 {
 	struct page *page = NULL;
 	/* TODO: Fill this function. */
+	page = malloc(sizeof(struct page));
 	struct hash_elem *e;
 
 	// va에 해당하는 hash_elem 찾기
@@ -87,11 +88,7 @@ bool spt_insert_page(struct supplemental_page_table *spt UNUSED,
 					 struct page *page UNUSED)
 {
 	/* TODO: Fill this function. */
-	struct page *p = spt_find_page(spt, page->va); // spt에 현재 추가하려는 va를 가진 page가 있는지 확인
-	if (p != NULL)
-		return false;
-	hash_insert(&spt, &page->hash_elem); // 존재하지 않을 경우에만 삽입
-	return true;
+	return hash_insert(&spt, &page->hash_elem) == NULL ? true : false; // 존재하지 않을 경우에만 삽입
 }
 
 void spt_remove_page(struct supplemental_page_table *spt, struct page *page)
