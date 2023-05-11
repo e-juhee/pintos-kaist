@@ -44,21 +44,25 @@ static struct frame *vm_evict_frame(void);
 /* Create the pending page object with initializer. If you want to create a
  * page, do not create it directly and make it through this function or
  * `vm_alloc_page`. */
+// 보류 중인 페이지 객체를 초기화와 함께 생성합니다. 페이지를 생성하려면 직접 생성하지 말고 이 함수나 vm_alloc_page를 통해 만드세요.
 bool vm_alloc_page_with_initializer(enum vm_type type, void *upage, bool writable,
 									vm_initializer *init, void *aux)
 {
-
 	ASSERT(VM_TYPE(type) != VM_UNINIT)
 
 	struct supplemental_page_table *spt = &thread_current()->spt;
 
 	/* Check wheter the upage is already occupied or not. */
+	// upage가 이미 사용 중인지 확인합니다.
 	if (spt_find_page(spt, upage) == NULL)
 	{
 		/* TODO: Create the page, fetch the initialier according to the VM type,
 		 * TODO: and then create "uninit" page struct by calling uninit_new. You
 		 * TODO: should modify the field after calling the uninit_new. */
-
+		// 페이지를 생성하고,
+		// VM 유형에 따라 초기화 함수를 가져와서
+		// uninit_new를 호출해 "uninit" 페이지 구조체를 생성하세요.
+		// uninit_new를 호출한 후에는 필드를 수정해야 합니다.
 		/* TODO: Insert the page into the spt. */
 	}
 err:
