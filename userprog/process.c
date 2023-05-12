@@ -237,6 +237,7 @@ int process_exec(void *f_name)
 
 	/* We first kill the current context */
 	process_cleanup();
+	supplemental_page_table_init(&thread_current()->spt); // 🤔 초기화해주지 않으면 exec 실패함
 
 	char *parse[64];
 	char *token, *save_ptr;
@@ -753,6 +754,13 @@ install_page(void *upage, void *kpage, bool writable)
  * If you want to implement the function for only project 2, implement it on the
  * upper block. */
 
+struct lazy_load_arg
+{
+	struct file *file;
+	off_t ofs;
+	uint32_t read_bytes;
+	uint32_t zero_bytes;
+};
 static bool
 lazy_load_segment(struct page *page, void *aux)
 {
@@ -762,7 +770,20 @@ lazy_load_segment(struct page *page, void *aux)
 	// 이 함수는 주소 VA에서 첫 페이지 폴트가 발생할 때 호출됩니다.
 	/* TODO: VA is available when calling this function. */
 	// 이 함수가 호출할 때 VA는 사용 가능합니다
+
+	struct lazy_load_arg *lazy_load_arg = (struct lazy_load_arg *)aux;
+	file_seek(lazy_load_arg->file, lazy_load_arg->ofs);
+	if (file_read(lazy_load_arg->file, page->frame->kva, lazy_load_arg->read_bytes) != (int)(lazy_load_arg->read_bytes))
+	{
+		palloc_free_page(page->frame->kva);
+		return false;
+	}
+	memset(page->frame->kva + lazy_load_arg->read_bytes, 0, lazy_load_arg->zero_bytes);
+	free(lazy_load_arg);
+
+	return true;
 }
+
 /* Loads a segment starting at offset OFS in FILE at address
  * UPAGE.  In total, READ_BYTES + ZERO_BYTES bytes of virtual
  * memory are initialized, as follows:
@@ -806,10 +827,15 @@ load_segment(struct file *file, off_t ofs, uint8_t *upage,
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
 		// vm_alloc_page_with_initializer에 제공할 aux 인수로 필요한 보조 값들을 설정해야 합니다.
 		// 바이너리 로딩(loading of binary)을 위해 필요한 정보를 포함하는 구조체를 만들어야 할 수도 있습니다.
-		void *aux = NULL;
+		// void *aux = NULL;
+		struct lazy_load_arg *lazy_load_arg = (struct lazy_load_arg *)malloc(sizeof(struct lazy_load_arg));
+		lazy_load_arg->file = file;
+		lazy_load_arg->ofs = ofs;
+		lazy_load_arg->read_bytes = page_read_bytes;
+		lazy_load_arg->zero_bytes = page_zero_bytes;
 		// vm_alloc_page_with_initializer를 호출하여 대기 중인 객체를 생성합니다.
 		if (!vm_alloc_page_with_initializer(VM_ANON, upage,
-											writable, lazy_load_segment, aux))
+											writable, lazy_load_segment, lazy_load_arg))
 			return false;
 
 		/* Advance. */
@@ -817,6 +843,7 @@ load_segment(struct file *file, off_t ofs, uint8_t *upage,
 		read_bytes -= page_read_bytes;
 		zero_bytes -= page_zero_bytes;
 		upage += PGSIZE;
+		ofs += page_read_bytes;
 	}
 	return true;
 }
@@ -834,9 +861,16 @@ setup_stack(struct intr_frame *if_)
 	 * TODO: You should mark the page is stack. */
 	/* TODO: stack_bottom에 스택을 매핑하고 페이지를 즉시 요청하세요.
 	 * TODO: 성공하면, rsp를 그에 맞게 설정하세요.
-	 * TODO: 페이지가 스택임을 표시해야 합니다. */
+	 * 🚨TODO: 페이지가 스택임을 표시해야 합니다. */
 	/* TODO: Your code goes here */
-
+	if (vm_alloc_page_with_initializer(VM_ANON, stack_bottom, 1, NULL, NULL))
+	// writable: 값을 넣어야 하니 True
+	// lazy_load를 하지 않을 거니까 init과 aux는 NULL
+	{
+		success = vm_claim_page(stack_bottom); // 페이지 요청
+		if (success)
+			if_->rsp = USER_STACK;
+	}
 	return success;
 }
 #endif /* VM */

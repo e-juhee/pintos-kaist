@@ -60,10 +60,27 @@ bool vm_alloc_page_with_initializer(enum vm_type type, void *upage, bool writabl
 		 * TODO: and then create "uninit" page struct by calling uninit_new. You
 		 * TODO: should modify the field after calling the uninit_new. */
 		// 페이지를 생성하고,
+		struct page *p = (struct page *)malloc(sizeof(struct page));
 		// VM 유형에 따라 초기화 함수를 가져와서
+		bool (*page_initializer)(struct page *, enum vm_type, void *);
+
+		switch (VM_TYPE(type))
+		{
+		case VM_ANON:
+			page_initializer = anon_initializer;
+			break;
+		case VM_FILE:
+			page_initializer = file_backed_initializer;
+			break;
+		}
 		// uninit_new를 호출해 "uninit" 페이지 구조체를 생성하세요.
+		uninit_new(p, upage, init, type, aux, page_initializer);
 		// uninit_new를 호출한 후에는 필드를 수정해야 합니다.
+		// 🚨 Todo : 뭘 수정해야 하지?
+		p->writable = writable;
+
 		/* TODO: Insert the page into the spt. */
+		return spt_insert_page(spt, p);
 	}
 err:
 	return false;
@@ -76,7 +93,7 @@ spt_find_page(struct supplemental_page_table *spt UNUSED, void *va UNUSED)
 {
 	struct page *page = NULL;
 	/* TODO: Fill this function. */
-	page = malloc(sizeof(struct page));
+	page = (struct page *)malloc(sizeof(struct page));
 	struct hash_elem *e;
 
 	// va에 해당하는 hash_elem 찾기
@@ -138,8 +155,9 @@ vm_get_frame(void)
 	if (kva == NULL)   // page 할당 실패 -> 나중에 swap_out 처리
 		PANIC("todo"); // OS를 중지시키고, 소스 파일명, 라인 번호, 함수명 등의 정보와 함께 사용자 지정 메시지를 출력
 
-	frame = malloc(sizeof(struct frame)); // 프레임 할당
-	frame->kva = kva;					  // 프레임 멤버 초기화
+	frame = (struct frame *)malloc(sizeof(struct frame)); // 프레임 할당
+	frame->kva = kva;									  // 프레임 멤버 초기화
+	frame->page = NULL;
 
 	ASSERT(frame != NULL);
 	ASSERT(frame->page == NULL);
@@ -165,9 +183,22 @@ bool vm_try_handle_fault(struct intr_frame *f UNUSED, void *addr UNUSED,
 	struct supplemental_page_table *spt UNUSED = &thread_current()->spt;
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
-	/* TODO: Your code goes here */
+	if (addr == NULL)
+		return false;
 
-	return vm_do_claim_page(page);
+	if (is_kernel_vaddr(addr))
+		return false;
+
+	if (not_present) // 접근한 메모리의 physical page가 존재하지 않은 경우
+	{
+		page = spt_find_page(spt, addr);
+		if (page == NULL)
+			return false;
+		if (write == 1 && page->writable == 0) // write 불가능한 페이지에 write 요청한 경우
+			return false;
+		return vm_do_claim_page(page);
+	}
+	return false;
 }
 
 /* Free the page.
@@ -204,8 +235,7 @@ vm_do_claim_page(struct page *page)
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
 	// 가상 주소와 물리 주소를 매핑
 	struct thread *current = thread_current();
-	bool writable = is_writable(current->pml4); // 🚨 Todo
-	pml4_set_page(current->pml4, page->va, frame->kva, writable);
+	pml4_set_page(current->pml4, page->va, frame->kva, page->writable);
 
 	return swap_in(page, frame->kva);
 }

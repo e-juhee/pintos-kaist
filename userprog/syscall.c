@@ -116,8 +116,8 @@ void check_address(void *addr)
 		exit(-1);
 	if (!is_user_vaddr(addr))
 		exit(-1);
-	if (pml4_get_page(thread_current()->pml4, addr) == NULL)
-		exit(-1);
+	// if (pml4_get_page(thread_current()->pml4, addr) == NULL)
+	// 	exit(-1);
 }
 
 void halt(void)

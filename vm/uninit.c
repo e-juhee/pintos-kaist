@@ -30,14 +30,14 @@ void uninit_new(struct page *page, void *va, vm_initializer *init,
 	ASSERT(page != NULL);
 
 	*page = (struct page){
-		.operations = &uninit_ops,
+		.operations = &uninit_ops, // operations->swap_in : uninit_initialize
 		.va = va,
 		.frame = NULL, /* no frame for now */
 		.uninit = (struct uninit_page){
-			.init = init,
+			.init = init, // lazy_load_segment
 			.type = type,
 			.aux = aux,
-			.page_initializer = initializer,
+			.page_initializer = initializer, // anon_initializer | file_backed_initializer
 		}};
 }
 
