@@ -861,9 +861,10 @@ setup_stack(struct intr_frame *if_)
 	 * TODO: You should mark the page is stack. */
 	/* TODO: stack_bottom에 스택을 매핑하고 페이지를 즉시 요청하세요.
 	 * TODO: 성공하면, rsp를 그에 맞게 설정하세요.
-	 * 🚨TODO: 페이지가 스택임을 표시해야 합니다. */
+	 * TODO: 페이지가 스택임을 표시해야 합니다. */
 	/* TODO: Your code goes here */
-	if (vm_alloc_page_with_initializer(VM_ANON, stack_bottom, 1, NULL, NULL))
+	if (vm_alloc_page_with_initializer(VM_ANON | VM_MARKER_0, stack_bottom, 1, NULL, NULL))
+	// VM_MARKER_0: 스택이 저장된 메모리 페이지를 식별
 	// writable: 값을 넣어야 하니 True
 	// lazy_load를 하지 않을 거니까 init과 aux는 NULL
 	{
