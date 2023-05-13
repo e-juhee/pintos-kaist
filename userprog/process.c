@@ -98,7 +98,7 @@ tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 	sema_down(&child->load_sema);
 
 	// 자식이 로드되다가 오류로 exit한 경우
-	if (child->exit_status == -2)
+	if (child->exit_status == TID_ERROR)
 	{
 		// 자식이 종료되었으므로 자식 리스트에서 제거한다.
 		// 이거 넣으면 간헐적으로 실패함 (syn-read)
@@ -217,7 +217,7 @@ __do_fork(void *aux)
 		do_iret(&if_);
 error:
 	sema_up(&current->load_sema);
-	exit(-2);
+	exit(TID_ERROR);
 }
 
 /* Switch the current execution context to the f_name.
@@ -237,7 +237,6 @@ int process_exec(void *f_name)
 
 	/* We first kill the current context */
 	process_cleanup();
-	supplemental_page_table_init(&thread_current()->spt); // 🤔 초기화해주지 않으면 exec 실패함
 
 	char *parse[64];
 	char *token, *save_ptr;
@@ -779,7 +778,7 @@ lazy_load_segment(struct page *page, void *aux)
 		return false;
 	}
 	memset(page->frame->kva + lazy_load_arg->read_bytes, 0, lazy_load_arg->zero_bytes);
-	free(lazy_load_arg);
+	// free(lazy_load_arg); // 🚨 Todo : 어디서 반환하지?
 
 	return true;
 }
