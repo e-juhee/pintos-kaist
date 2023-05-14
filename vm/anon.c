@@ -53,8 +53,11 @@ anon_swap_out(struct page *page)
 }
 
 /* Destroy the anonymous page. PAGE will be freed by the caller. */
+// 익명 페이지를 destroy합니다. PAGE는 호출자에 의해 해제될 것입니다
 static void
 anon_destroy(struct page *page)
 {
 	struct anon_page *anon_page = &page->anon;
+	// anonymous page에 의해 유지되던 리소스를 해제합니다.
+	// page struct를 명시적으로 해제할 필요는 없으며, 호출자가 이를 수행해야 합니다.
 }

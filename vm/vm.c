@@ -310,17 +310,28 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst UNUSED,
 	return true;
 }
 
+/* Free the resource hold by the supplemental page table */
+// SPT가 보유하고 있던 모든 리소스를 해제하는 함수 (process_exit(), process_cleanup()에서 호출)
+void supplemental_page_table_kill(struct supplemental_page_table *spt UNUSED)
+{
+	/* TODO: Destroy all the supplemental_page_table hold by thread and
+	 * TODO: writeback all the modified contents to the storage. */
+	// todo: 페이지 항목들을 순회하며 테이블 내의 페이지들에 대해 destroy(page)를 호출
+	hash_clear(&spt->spt_hash, hash_page_destroy); // 해시 테이블의 모든 요소를 제거
+
+	/** hash_destroy가 아닌 hash_clear를 사용해야 하는 이유
+	 * 여기서 hash_destroy 함수를 사용하면 hash가 사용하던 메모리(hash->bucket) 자체도 반환한다.
+	 * process가 실행될 때 hash table을 생성한 이후에 process_clean()이 호출되는데,
+	 * 이때는 hash table은 남겨두고 안의 요소들만 제거되어야 한다.
+	 * 따라서, hash의 요소들만 제거하는 hash_clear를 사용해야 한다.
+	 */
+
+	// todo🚨: 모든 수정된 내용을 스토리지에 기록
+}
+
 void hash_page_destroy(struct hash_elem *e, void *aux)
 {
 	struct page *page = hash_entry(e, struct page, hash_elem);
 	destroy(page);
 	free(page);
-}
-
-/* Free the resource hold by the supplemental page table */
-void supplemental_page_table_kill(struct supplemental_page_table *spt UNUSED)
-{
-	/* TODO: Destroy all the supplemental_page_table hold by thread and
-	 * TODO: writeback all the modified contents to the storage. */
-	hash_clear(&spt->spt_hash, hash_page_destroy); // 해시 테이블에서 모든 요소를 제거
 }
