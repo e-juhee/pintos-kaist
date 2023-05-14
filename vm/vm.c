@@ -170,6 +170,9 @@ vm_get_frame(void)
 static void
 vm_stack_growth(void *addr UNUSED)
 {
+	// todo: 스택 크기를 증가시키기 위해 anon page를 하나 이상 할당하여 주어진 주소(addr)가 더 이상 예외 주소(faulted address)가 되지 않도록 합니다.
+	// todo: 할당할 때 addr을 PGSIZE로 내림하여 처리
+	vm_alloc_page(VM_ANON | VM_MARKER_0, pg_round_down(addr), 1);
 }
 
 /* Handle the fault on write_protected page */
@@ -179,12 +182,16 @@ vm_handle_wp(struct page *page UNUSED)
 }
 
 /* Return true on success */
+/**
+ *not_present; // True: not-present page, false: writing r/o page.
+ *write;	  // True: access was write, false: access was read.
+ *user;		  // True: access by user, false: access by kernel.
+ */
 bool vm_try_handle_fault(struct intr_frame *f UNUSED, void *addr UNUSED,
 						 bool user UNUSED, bool write UNUSED, bool not_present UNUSED)
 {
 	struct supplemental_page_table *spt UNUSED = &thread_current()->spt;
 	struct page *page = NULL;
-	/* TODO: Validate the fault */
 	if (addr == NULL)
 		return false;
 
@@ -193,6 +200,16 @@ bool vm_try_handle_fault(struct intr_frame *f UNUSED, void *addr UNUSED,
 
 	if (not_present) // 접근한 메모리의 physical page가 존재하지 않은 경우
 	{
+		/* TODO: Validate the fault */
+		// todo: 페이지 폴트가 스택 확장에 대한 유효한 경우인지를 확인해야 합니다.
+		void *rsp = f->rsp; // user access인 경우 rsp는 유저 stack을 가리킨다.
+		if (!user)			// kernel access인 경우 thread에서 rsp를 가져와야 한다.
+			rsp = thread_current()->rsp;
+
+		// 스택 확장으로 처리할 수 있는 폴트인 경우, vm_stack_growth를 호출
+		if (USER_STACK - (1 << 20) <= rsp - 8 && rsp - 8 <= addr && addr <= USER_STACK)
+			vm_stack_growth(addr);
+
 		page = spt_find_page(spt, addr);
 		if (page == NULL)
 			return false;
