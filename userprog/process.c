@@ -20,6 +20,7 @@
 #include "intrinsic.h"
 #ifdef VM
 #include "vm/vm.h"
+#include "userprog/syscall.h"
 #endif
 
 static void process_cleanup(void);
@@ -104,7 +105,7 @@ tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 		// 이거 넣으면 간헐적으로 실패함 (syn-read)
 		// list_remove(&child->child_elem);
 		// 자식이 완전히 종료되고 스케줄링이 이어질 수 있도록 자식에게 signal을 보낸다.
-		sema_up(&child->exit_sema);
+		// sema_up(&child->exit_sema);
 		// 자식 프로세스의 pid가 아닌 TID_ERROR를 반환한다.
 		return TID_ERROR;
 	}
@@ -209,7 +210,9 @@ __do_fork(void *aux)
 	current->next_fd = parent->next_fd;
 
 	// 로드가 완료될 때까지 기다리고 있던 부모 대기 해제
+	lock_acquire(&filesys_lock);
 	sema_up(&current->load_sema);
+	lock_release(&filesys_lock);
 	process_init();
 
 	/* Finally, switch to the newly created process. */
