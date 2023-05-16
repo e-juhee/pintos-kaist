@@ -139,8 +139,11 @@ void exit(int status)
 
 bool create(const char *file, unsigned initial_size)
 {
+	lock_acquire(&filesys_lock);
 	check_address(file);
-	return filesys_create(file, initial_size);
+	bool success = filesys_create(file, initial_size);
+	lock_release(&filesys_lock);
+	return success;
 }
 
 bool remove(const char *file)
@@ -152,12 +155,17 @@ bool remove(const char *file)
 int open(const char *file_name)
 {
 	check_address(file_name);
+	lock_acquire(&filesys_lock);
 	struct file *file = filesys_open(file_name);
 	if (file == NULL)
+	{
+		lock_release(&filesys_lock);
 		return -1;
+	}
 	int fd = process_add_file(file);
 	if (fd == -1)
 		file_close(file);
+	lock_release(&filesys_lock);
 	return fd;
 }
 
