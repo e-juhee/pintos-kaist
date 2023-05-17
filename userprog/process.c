@@ -210,9 +210,7 @@ __do_fork(void *aux)
 	current->next_fd = parent->next_fd;
 
 	// 로드가 완료될 때까지 기다리고 있던 부모 대기 해제
-	lock_acquire(&filesys_lock);
 	sema_up(&current->load_sema);
-	lock_release(&filesys_lock);
 	process_init();
 
 	/* Finally, switch to the newly created process. */
@@ -248,7 +246,9 @@ int process_exec(void *f_name)
 		parse[count++] = token;
 
 	/* And then load the binary */
+	lock_acquire(&filesys_lock);
 	success = load(file_name, &_if);
+	lock_release(&filesys_lock);
 	// 이진 파일을 디스크에서 메모리로 로드한다.
 	// 이진 파일에서 실행하려는 명령의 위치를 얻고 (if_.rip)
 	// user stack의 top 포인터를 얻는다. (if_.rsp)
@@ -751,15 +751,7 @@ install_page(void *upage, void *kpage, bool writable)
  * If you want to implement the function for only project 2, implement it on the
  * upper block. */
 
-struct lazy_load_arg
-{
-	struct file *file;
-	off_t ofs;
-	uint32_t read_bytes;
-	uint32_t zero_bytes;
-};
-static bool
-lazy_load_segment(struct page *page, void *aux)
+bool lazy_load_segment(struct page *page, void *aux)
 {
 	/* TODO: Load the segment from the file */
 	// 파일에서 세그먼트를 로드하세요
