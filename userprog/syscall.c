@@ -312,32 +312,23 @@ int wait(int pid)
 
 void *mmap(void *addr, size_t length, int writable, int fd, off_t offset)
 {
-	if (!addr)
-		return NULL;
-	if (addr != pg_round_down(addr))
+	if (!addr || addr != pg_round_down(addr))
 		return NULL;
 
 	if (offset != pg_round_down(offset))
 		return NULL;
 
-	if (!is_user_vaddr(addr))
-		return NULL;
-	if (!is_user_vaddr(addr - length + offset))
+	if (!is_user_vaddr(addr) || !is_user_vaddr(addr - length + offset))
 		return NULL;
 
 	if (spt_find_page(&thread_current()->spt, addr))
 		return NULL;
 
-	if (length == 0)
-		return NULL;
-
-	if (fd < 2)
-		return NULL;
-
 	struct file *f = process_get_file(fd);
 	if (f == NULL)
 		return NULL;
-	if (file_length(f) == 0)
+
+	if (file_length(f) == 0 || length == 0)
 		return NULL;
 
 	return do_mmap(addr, length, writable, f, offset); // 파일이 매핑된 가상 주소 반환
