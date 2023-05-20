@@ -754,19 +754,20 @@ install_page(void *upage, void *kpage, bool writable)
 bool lazy_load_segment(struct page *page, void *aux)
 {
 	/* TODO: Load the segment from the file */
-	// 파일에서 세그먼트를 로드하세요
 	/* TODO: This called when the first page fault occurs on address VA. */
-	// 이 함수는 주소 VA에서 첫 페이지 폴트가 발생할 때 호출됩니다.
 	/* TODO: VA is available when calling this function. */
-	// 이 함수가 호출할 때 VA는 사용 가능합니다
 
 	struct lazy_load_arg *lazy_load_arg = (struct lazy_load_arg *)aux;
+
+	// 1) 파일의 position을 ofs으로 지정한다.
 	file_seek(lazy_load_arg->file, lazy_load_arg->ofs);
+	// 2) 파일을 read_bytes만큼 물리 프레임에 읽어 들인다.
 	if (file_read(lazy_load_arg->file, page->frame->kva, lazy_load_arg->read_bytes) != (int)(lazy_load_arg->read_bytes))
 	{
 		palloc_free_page(page->frame->kva);
 		return false;
 	}
+	// 3) 다 읽은 지점부터 zero_bytes만큼 0으로 채운다.
 	memset(page->frame->kva + lazy_load_arg->read_bytes, 0, lazy_load_arg->zero_bytes);
 	// free(lazy_load_arg); // 🚨 Todo : 어디서 반환하지?
 
@@ -807,28 +808,25 @@ load_segment(struct file *file, off_t ofs, uint8_t *upage,
 		/* Do calculate how to fill this page.
 		 * We will read PAGE_READ_BYTES bytes from FILE
 		 * and zero the final PAGE_ZERO_BYTES bytes. */
-		/* 이 페이지를 채우는 방법을 계산합니다.
-		파일에서 PAGE_READ_BYTES 바이트를 읽고
-		최종 PAGE_ZERO_BYTES 바이트를 0으로 채웁니다. */
-		size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
+		// 이 페이지를 채우는 방법을 계산합니다. 파일에서 PAGE_READ_BYTES 만큼 읽고	나머지 PAGE_ZERO_BYTES 만큼 0으로 채웁니다.
+		size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE; // 최대로 읽을 수 있는 크기는 PGSIZE
 		size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
 		// vm_alloc_page_with_initializer에 제공할 aux 인수로 필요한 보조 값들을 설정해야 합니다.
-		// 바이너리 로딩(loading of binary)을 위해 필요한 정보를 포함하는 구조체를 만들어야 할 수도 있습니다.
-		// void *aux = NULL;
+		// loading을 위해 필요한 정보를 포함하는 구조체를 만들어야 합니다.
 		struct lazy_load_arg *lazy_load_arg = (struct lazy_load_arg *)malloc(sizeof(struct lazy_load_arg));
-		lazy_load_arg->file = file;
-		lazy_load_arg->ofs = ofs;
-		lazy_load_arg->read_bytes = page_read_bytes;
-		lazy_load_arg->zero_bytes = page_zero_bytes;
+		lazy_load_arg->file = file;					 // 내용이 담긴 파일 객체
+		lazy_load_arg->ofs = ofs;					 // 이 페이지에서 읽기 시작할 위치
+		lazy_load_arg->read_bytes = page_read_bytes; // 이 페이지에서 읽어야 하는 바이트 수
+		lazy_load_arg->zero_bytes = page_zero_bytes; // 이 페이지에서 read_bytes만큼 읽고 공간이 남아 0으로 채워야 하는 바이트 수
 		// vm_alloc_page_with_initializer를 호출하여 대기 중인 객체를 생성합니다.
 		if (!vm_alloc_page_with_initializer(VM_ANON, upage,
 											writable, lazy_load_segment, lazy_load_arg))
 			return false;
 
 		/* Advance. */
-		// 읽은 바이트와 0으로 채운 바이트를 추적하고 가상 주소를 증가시킵니다.
+		// 다음 반복을 위하여 읽어들인 만큼 값을 갱신합니다.
 		read_bytes -= page_read_bytes;
 		zero_bytes -= page_zero_bytes;
 		upage += PGSIZE;
@@ -843,6 +841,8 @@ static bool
 setup_stack(struct intr_frame *if_)
 {
 	bool success = false;
+
+	// 스택은 아래로 성장하므로, USER_STACK에서 PGSIZE만큼 아래로 내린 지점에서 페이지를 생성한다.
 	void *stack_bottom = (void *)(((uint8_t *)USER_STACK) - PGSIZE);
 
 	/* TODO: Map the stack on stack_bottom and claim the page immediately.
@@ -852,13 +852,16 @@ setup_stack(struct intr_frame *if_)
 	 * TODO: 성공하면, rsp를 그에 맞게 설정하세요.
 	 * TODO: 페이지가 스택임을 표시해야 합니다. */
 	/* TODO: Your code goes here */
-	if (vm_alloc_page_with_initializer(VM_ANON | VM_MARKER_0, stack_bottom, 1, NULL, NULL))
-	// VM_MARKER_0: 스택이 저장된 메모리 페이지를 식별
-	// writable: 값을 넣어야 하니 True
-	// lazy_load를 하지 않을 거니까 init과 aux는 NULL
+
+	// 1) stack_bottom에 페이지를 하나 할당받는다.
+	if (vm_alloc_page(VM_ANON | VM_MARKER_0, stack_bottom, 1))
+	// VM_MARKER_0: 스택이 저장된 메모리 페이지임을 식별하기 위해 추가
+	// writable: argument_stack()에서 값을 넣어야 하니 True
 	{
-		success = vm_claim_page(stack_bottom); // 페이지 요청
+		// 2) 할당 받은 페이지에 바로 물리 프레임을 매핑한다.
+		success = vm_claim_page(stack_bottom);
 		if (success)
+			// 3) rsp를 변경한다. (argument_stack에서 이 위치부터 인자를 push한다.)
 			if_->rsp = USER_STACK;
 	}
 	return success;
