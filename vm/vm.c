@@ -19,6 +19,8 @@ void vm_init(void)
 	register_inspect_intr();
 	/* DO NOT MODIFY UPPER LINES. */
 	/* TODO: Your code goes here. */
+	list_init(&frame_table);
+	lock_init(&frame_table_lock);
 }
 
 /* Get the type of the page. This function is useful if you want to know the
@@ -129,7 +131,27 @@ vm_get_victim(void)
 {
 	struct frame *victim = NULL;
 	/* TODO: The policy for eviction is up to you. */
+	struct thread *curr = thread_current();
 
+	lock_acquire(&frame_table_lock);
+	struct list_elem *start = list_begin(&frame_table);
+	for (start; start != list_end(&frame_table); start = list_next(start))
+	{
+		victim = list_entry(start, struct frame, frame_elem);
+		if (victim->page == NULL) // frame에 할당된 페이지가 없는 경우 (page가 destroy된 경우 )
+		{
+			lock_release(&frame_table_lock);
+			return victim;
+		}
+		if (pml4_is_accessed(curr->pml4, victim->page->va))
+			pml4_set_accessed(curr->pml4, victim->page->va, 0);
+		else
+		{
+			lock_release(&frame_table_lock);
+			return victim;
+		}
+	}
+	lock_release(&frame_table_lock);
 	return victim;
 }
 
@@ -138,10 +160,11 @@ vm_get_victim(void)
 static struct frame *
 vm_evict_frame(void)
 {
-	struct frame *victim UNUSED = vm_get_victim();
+	struct frame *victim = vm_get_victim();
 	/* TODO: swap out the victim and return the evicted frame. */
-
-	return NULL;
+	if (victim->page)
+		swap_out(victim->page);
+	return victim;
 }
 
 /* palloc() and get frame. If there is no available page, evict the page
@@ -156,13 +179,20 @@ vm_get_frame(void)
 
 	void *kva = palloc_get_page(PAL_USER); // user pool에서 새로운 physical page를 가져온다.
 
-	if (kva == NULL)   // page 할당 실패 -> 나중에 swap_out 처리
-		PANIC("todo"); // OS를 중지시키고, 소스 파일명, 라인 번호, 함수명 등의 정보와 함께 사용자 지정 메시지를 출력
+	if (kva == NULL) // page 할당 실패
+	{
+		struct frame *victim = vm_evict_frame();
+		victim->page = NULL;
+		return victim;
+	}
 
 	frame = (struct frame *)malloc(sizeof(struct frame)); // 프레임 할당
 	frame->kva = kva;									  // 프레임 멤버 초기화
 	frame->page = NULL;
 
+	lock_acquire(&frame_table_lock);
+	list_push_back(&frame_table, &frame->frame_elem);
+	lock_release(&frame_table_lock);
 	ASSERT(frame != NULL);
 	ASSERT(frame->page == NULL);
 	return frame;
@@ -321,10 +351,12 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst UNUSED,
 			file_aux->file = src_page->file.file;
 			file_aux->ofs = src_page->file.ofs;
 			file_aux->read_bytes = src_page->file.read_bytes;
+			file_aux->zero_bytes = src_page->file.zero_bytes;
 			if (!vm_alloc_page_with_initializer(type, upage, writable, NULL, file_aux))
 				return false;
 			struct page *file_page = spt_find_page(dst, upage);
 			file_backed_initializer(file_page, type, NULL);
+			file_page->frame = src_page->frame;
 			pml4_set_page(thread_current()->pml4, file_page->va, src_page->frame->kva, src_page->writable);
 			continue;
 		}

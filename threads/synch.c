@@ -411,9 +411,9 @@ void remove_donor(struct lock *lock)
 	while (1)
 	{
 		donor_thread = list_entry(donor_elem, struct thread, donation_elem);
+		donor_elem = list_next(donor_elem);
 		if (donor_thread->wait_on_lock == lock)		   // 현재 release될 lock을 기다리던 스레드라면
 			list_remove(&donor_thread->donation_elem); // 목록에서 제거
-		donor_elem = list_next(donor_elem);
 		if (donor_elem == list_end(donations))
 			return;
 	}
