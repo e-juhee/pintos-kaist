@@ -105,8 +105,8 @@ do_mmap(void *addr, size_t length, int writable,
 	size_t zero_bytes = PGSIZE - read_bytes % PGSIZE;
 
 	ASSERT((read_bytes + zero_bytes) % PGSIZE == 0);
-	ASSERT(pg_ofs(addr) == 0);	 // upage가 페이지 정렬되어 있는지 확인
-	ASSERT(offset % PGSIZE == 0) // ofs가 페이지 정렬되어 있는지 확인;
+	ASSERT(pg_ofs(addr) == 0);	  // upage가 페이지 정렬되어 있는지 확인
+	ASSERT(offset % PGSIZE == 0); // ofs가 페이지 정렬되어 있는지 확인
 
 	while (read_bytes > 0 || zero_bytes > 0)
 	{
