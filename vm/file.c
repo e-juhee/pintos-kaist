@@ -39,6 +39,7 @@ bool file_backed_initializer(struct page *page, enum vm_type type, void *kva)
 	file_page->ofs = lazy_load_arg->ofs;
 	file_page->read_bytes = lazy_load_arg->read_bytes;
 	file_page->zero_bytes = lazy_load_arg->zero_bytes;
+	return true;
 }
 
 /* Swap in the page by read contents from the file. */

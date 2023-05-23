@@ -362,7 +362,7 @@ void process_exit(void)
 	file_close(cur->running); // 현재 실행 중인 파일도 닫는다.
 
 	process_cleanup();
-	// hash_destroy(&cur->spt.spt_hash, NULL); // todo 🚨
+	hash_destroy(&cur->spt.spt_hash, NULL); // todo 🚨
 
 	// 자식이 종료될 때까지 대기하고 있는 부모에게 signal을 보낸다.
 	sema_up(&cur->wait_sema);
