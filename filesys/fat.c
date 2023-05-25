@@ -162,6 +162,8 @@ void fat_boot_create(void)
 void fat_fs_init(void)
 {
 	/* TODO: Your code goes here. */
+	fat_fs->fat_length = fat_fs->bs.fat_sectors / SECTORS_PER_CLUSTER;
+	fat_fs->data_start = fat_fs->bs.fat_start + fat_fs->bs.fat_sectors;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -175,6 +177,37 @@ cluster_t
 fat_create_chain(cluster_t clst)
 {
 	/* TODO: Your code goes here. */
+	// 빈 클러스터 찾기
+	cluster_t i;
+	for (i = 2; i <= fat_fs->fat_length; i++)
+	{
+		if (fat_get(i) == 0)
+			break;
+	}
+	if (i == fat_fs->fat_length) // 빈 클러스터가 없으면 0 반환
+		return 0;
+
+	// 위에서 찾은 빈 클러스터를 새 클러스터로 추가
+	fat_put(i, EOChain);
+
+	// clst가 0인 경우, 새 클러스터 추가만 하고 종료
+	if (clst == 0)
+		return i;
+
+	// clst가 0이 아닌 경우, 최종 클러스터 <-> i 연결
+	cluster_t cur_clst = clst;
+	// 현재 클러스터와 연결된 최종 클러스터 탐색 (가장 마지막 클러스터와 i를 연결)
+	while (true)
+	{
+		if (fat_get(cur_clst) == EOChain)
+		{
+			fat_put(cur_clst, i);
+			break;
+		}
+		cur_clst = fat_get(cur_clst);
+	}
+
+	return i;
 }
 
 /* Remove the chain of clusters starting from CLST.
@@ -182,12 +215,28 @@ fat_create_chain(cluster_t clst)
 void fat_remove_chain(cluster_t clst, cluster_t pclst)
 {
 	/* TODO: Your code goes here. */
+	fat_put(pclst, EOChain);
+
+	cluster_t cur_clst = clst;
+	cluster_t next_clst;
+	while (true)
+	{
+		if (fat_get(cur_clst) == EOChain)
+		{
+			fat_put(cur_clst, 0);
+			break;
+		}
+		next_clst = fat_get(cur_clst);
+		fat_put(cur_clst, 0);
+		cur_clst = next_clst;
+	}
 }
 
 /* Update a value in the FAT table. */
 void fat_put(cluster_t clst, cluster_t val)
 {
 	/* TODO: Your code goes here. */
+	fat_fs->fat[clst] = val;
 }
 
 /* Fetch a value in the FAT table. */
@@ -195,6 +244,7 @@ cluster_t
 fat_get(cluster_t clst)
 {
 	/* TODO: Your code goes here. */
+	return fat_fs->fat[clst];
 }
 
 /* Covert a cluster # to a sector number. */
@@ -202,4 +252,5 @@ disk_sector_t
 cluster_to_sector(cluster_t clst)
 {
 	/* TODO: Your code goes here. */
+	return fat_fs->data_start + clst;
 }
